@@ -1,0 +1,3 @@
+GLOBAL:scripts/CloningAvatar/Avatar_g.lua
+PLAYER:scripts/CloningAvatar/Avatar_p.lua
+NPC:scripts/CloningAvatar/Avatar_NPC.lua
