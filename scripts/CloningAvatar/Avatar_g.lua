@@ -7,6 +7,7 @@ local I = require("openmw.interfaces")
 local async = require('openmw.async')
 local storage = require("openmw.storage")
 local actorSwap = require('scripts.CloningAvatar.ActorSwap')
+local cloneData = require("scripts.CloningAvatar.common.cloneData")
 local function doActorSwap(data)
     actorSwap.doActorSwap(data.actor1, data.actor2)
 end
@@ -51,7 +52,7 @@ local function playerRespawn()
 end
 local activatedActor
 local function activateNPC(object, actor)
-   --print(object.recordId)
+    --print(object.recordId)
     if object.recordId == "zhac_avatarbase" then
         --actorSwap.doActorSwap(actor, object)
         --return false
@@ -67,6 +68,17 @@ local function onItemActive(item)
         end
     end
 end
+local function updateClonedataLocation(actor)
+    cloneData.updateClonedataLocation(actor)
+end
+local cloneScript = "scripts//cloningAvatar//omw//cloneScript.lua"
+local function onActorActive(actor)
+    if actor.recordId == "zhack_avatarbase" then
+        if not actor:hasScript(cloneScript) then
+            actor:addScript(cloneScript)
+        end
+    end
+end
 acti.addHandlerForType(types.NPC, activateNPC)
 return {
     interfaceName  = "CloningAvatars",
@@ -75,12 +87,14 @@ return {
 
     },
     engineHandlers = {
-        onItemActive = onItemActive
+        onItemActive = onItemActive,
+        onActorActive = onActorActive,
     },
     eventHandlers  = {
         doActorSwap = doActorSwap,
         createPlayerAvatar = createPlayerAvatar,
         rezPlayer = rezPlayer,
         playerRespawn = playerRespawn,
+        updateClonedataLocation = updateClonedataLocation,
     }
 }
