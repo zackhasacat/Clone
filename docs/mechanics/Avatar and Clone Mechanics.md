@@ -4,3 +4,4 @@ A list of created clones is stored in a lua table, along with the save game.
 
 The player is teleported and swapped with these NPCs when they wish to "take control". Their inventories are swapped, and their positions.
 
+The player's original body must stay inside of a tube for them to be able to control the other clones.
