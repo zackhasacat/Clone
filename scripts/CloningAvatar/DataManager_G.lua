@@ -1,28 +1,32 @@
-
 local data = {}
-
+local world = require("openmw.world")
 local function onSave()
-return {data = data}
+    return { data = data }
 end
 local function onLoad(tdata)
-if not tdata then return end
-data = tdata.data
+    if not tdata then return end
+    data = tdata.data
 end
-local function setValue(varName,var)
-data[varName] = var
-
+local function setValue(varName, var)
+    data[varName] = var
 end
 local function getValue(varName)
     return data[varName]
 end
-return{
+local function openClonePlayerMenu()
+world.players[1]:sendEvent("openClonePlayerMenu",data["CloneData"])
+end
+return {
     interfaceName = "CA_DataManager",
     interface = {
         getValue = getValue,
         setValue = setValue
     },
     engineHandlers = {
-onSave = onSave,
-onLoad = onLoad
+        onSave = onSave,
+        onLoad = onLoad
+    },
+    eventHandlers = {
+        openClonePlayerMenu = openClonePlayerMenu,
     }
 }

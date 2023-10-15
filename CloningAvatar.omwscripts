@@ -3,3 +3,4 @@ PLAYER:scripts/CloningAvatar/Avatar_p.lua
 NPC:scripts/CloningAvatar/Avatar_NPC.lua
 GLOBAL:scripts/CloningAvatar/DataManager_G.lua
 CUSTOM:scripts/CloningAvatar/omw/cloneScript.lua
+GLOBAL:scripts/CloningAvatar/omw/events.lua

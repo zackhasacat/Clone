@@ -79,6 +79,16 @@ local function onActorActive(actor)
         end
     end
 end
+local function SwitchToClone(id)
+local cdata = cloneData.getCloneData()
+
+local destCLone = cloneData.getCloneObject(id)
+if not destCLone then
+    error("No clone found!")
+end
+cloneData.transferPlayerData(world.players[1],destCLone)
+
+end
 acti.addHandlerForType(types.NPC, activateNPC)
 return {
     interfaceName  = "CloningAvatars",
@@ -96,5 +106,6 @@ return {
         rezPlayer = rezPlayer,
         playerRespawn = playerRespawn,
         updateClonedataLocation = updateClonedataLocation,
+        SwitchToClone= SwitchToClone
     }
 }
