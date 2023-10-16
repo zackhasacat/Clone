@@ -52,6 +52,12 @@ end
 local function showMessage(msg)
 ui.showMessage(msg)
 end
+local function writeToConsole(msg)
+ui.printToConsole(msg, ui.CONSOLE_COLOR.Info)
+end
+local function closeMenu()
+
+end
 return {
     interfaceName  = "CloningAvatars",
     interface      = {
@@ -69,5 +75,6 @@ return {
         closeMenuWindow_Clone = closeMenuWindow_Clone,
         openClonePlayerMenu = openClonePlayerMenu,
         showMessage = showMessage,
+        writeToConsole= writeToConsole,
     }
 }

@@ -154,5 +154,20 @@ function commonUtil.showMessage(msg)
         tes3ui.showNotifyMenu(msg)
     end
 end
+function commonUtil.writeToConsole(msg)
+    if omw then
+        world.players[1]:sendEvent("writeToConsole", msg)
+    else
+        tes3ui.log(msg)
+    end
+end
+function commonUtil.closeMenu()
+if omw then
+
+    world.players[1]:sendEvent("closeMenuWindow_Clone")
+else
+    tes3ui.leaveMenuMode()
+end
+end
 
 return commonUtil

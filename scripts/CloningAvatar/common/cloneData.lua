@@ -69,10 +69,16 @@ function cloneData.transferPlayerData(actor1, actor2, doTP)
             table.insert(actor2Inv, item)
         end
         for index, item in ipairs(actor1Inv) do
+            if item.count > 0 then
+                
             item:moveInto(actor2)
+            end
         end
         for index, item in ipairs(actor2Inv) do
+            if item.count > 0 then
+                
             item:moveInto(actor1)
+            end
         end
         actor1:sendEvent("CA_setEquipment", actor2Equip)
         actor2:sendEvent("CA_setEquipment", actor1Equip)

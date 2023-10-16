@@ -46,6 +46,8 @@ end
 function events.onConsoleCommand(command)
     if command == "luaclonetp" or command == "clonetp" then
         commonUtil.teleportActor(commonUtil.getPlayer(), "gnisis, arvs-drelen", { x = 3870, y = 3857, z = 256 })
+        commonUtil.writeToConsole("Teleported to Gnisis")
+        commonUtil.closeMenu()
     end
 end
 

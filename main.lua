@@ -16,6 +16,10 @@ local function death(e)
         events.onPlayerDeath(e.reference)
     end
 end
+local function soundObjectPlayCallback(e)
+  --  return false
+end
+event.register(tes3.event.soundObjectPlay, soundObjectPlayCallback)
 local function onDamage(e)
 
     if e.reference.id == tes3.player.id then
@@ -37,7 +41,7 @@ if command then
             name = "clonetp",
             description = "TP to clone area",
             callback = function(argv)
-                commonUtil.teleportActor(commonUtil.getPlayer(), "gnisis, arvs-drelen", { x = 3870, y = 3857, z = 256 })
+                events.onConsoleCommand("clonetp")
             end,
         },
     })
