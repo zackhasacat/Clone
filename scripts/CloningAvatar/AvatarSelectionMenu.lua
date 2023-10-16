@@ -63,6 +63,16 @@ local function textContent(text, template, color)
         }
     }
 end
+local function boxedContainer(element)
+    return {
+        type = ui.TYPE.Container,
+        template = I.MWUI.templates.boxTransparent,
+        props = {
+            -- size = util.vector2(400, 400),
+        },
+        content =ui.content{element}
+    }
+end
 local function mouseClick(mouseEvent, data)
     local id = data.props.id
     for key, value in ipairs(menuOptions) do
@@ -265,6 +275,7 @@ function selMenu.showMessageBox(ncloneData, textLines, buttons)
             autoSize = true
         },
     }
+    itemK = boxedContainer(itemK)
     local itemB = { --This includes the top text, and the botton buttons.
         type = ui.TYPE.Flex,
         content = ui.content(table_contents2),

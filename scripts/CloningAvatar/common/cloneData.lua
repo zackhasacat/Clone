@@ -53,8 +53,12 @@ function cloneData.transferPlayerData(actor1, actor2, doTP)
     if actor1CD and actor2CD then
         cloneData.setCloneDataForNPCID(actor1CD.id, actor2id)
         cloneData.setCloneDataForNPCID(actor2CD.id, actor1id)
-    else
-        error("Missing data")
+    elseif not actor2 then
+        error("No actor 2")
+    elseif not actor1CD then
+        error("Missing data for actor1")
+    elseif not actor2CD then
+        error("Missing data for actor2")
     end
     if omw then
         local actor1Inv = {}
@@ -238,7 +242,22 @@ function commonUtil.getLocationData(obj)
         }
     end
 end
-
+function commonUtil.copyStats(actorSource,actorTarget)
+if omw then
+    for key, val in pairs(actorSource.type.stats.attributes) do 
+        actorTarget:sendEvent("CA_SetStat",{stat = "attributes",key = key, base = val(actorSource).base, damage = val(actorSource).damage,  modifier = val(actorSource).modifier})
+        
+    end
+    for key, val in pairs(actorSource.type.stats.dynamic) do 
+        actorTarget:sendEvent("CA_SetStat",{stat = "dynamic",key = key, base = val(actorSource).base, damage = val(actorSource).damage,  modifier = val(actorSource).modifier})
+    
+    end
+    for key, val in pairs(actorSource.type.stats.skills) do 
+        actorTarget:sendEvent("CA_SetStat",{stat = "skills",key = key, base = val(actorSource).base, damage = val(actorSource).damage,  modifier = val(actorSource).modifier})
+    
+    end
+end
+end
 function commonUtil.createPlayerClone(cell, position, rotation)
     local newActor
     if omw then
@@ -247,7 +266,6 @@ function commonUtil.createPlayerClone(cell, position, rotation)
         end
         newActor = world.createObject(cloneData.getCloneRecord().id)
         newActor:teleport(cell, position, rotation)
-        return newActor
     else
         if not rotation then
             rotation = tes3vector3.new(0, 0, 0)
@@ -259,8 +277,9 @@ function commonUtil.createPlayerClone(cell, position, rotation)
             cell = cell,
             orientation = rotation
         })
-        return newActor
     end
+    commonUtil.copyStats(getPlayer(),newActor)
+    return newActor
 end
 
 function commonUtil.getReferenceById(id, locationData)
