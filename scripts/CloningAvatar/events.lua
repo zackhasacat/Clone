@@ -31,6 +31,9 @@ end
 
 function events.onKeyPress(keyChar)
     if keyChar == 'k' then
+        if commonUtil.menuMode() then
+            return 
+        end
         commonUtil.showMessage("K Pressed")
         commonUtil.openCloneMenu()
     end

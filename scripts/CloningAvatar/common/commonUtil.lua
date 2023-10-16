@@ -27,7 +27,13 @@ function commonUtil.getPlayer()
         return tes3.getReference("player")
     end
 end
-
+function commonUtil.menuMode()
+if omw then
+    return core.isWorldPaused()
+else
+    return tes3.menuMode()
+end
+end
 function commonUtil.resurrectPlayer()
     commonUtil.setActorHealth(tes3.player.mobile, 100)
     tes3.player.mobile:resurrect({ resetState = false, })

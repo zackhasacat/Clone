@@ -8,9 +8,9 @@ local _, interfaces = pcall(require, "openmw.interfaces")
 if omw then
     pathPrefix = "scripts.CloningAvatar"
 end
-local dataManager   = require(pathPrefix .. ".common.dataManager")
-local cloneData     = {}
-local commonUtil    = {
+local dataManager = require(pathPrefix .. ".common.dataManager")
+local cloneData   = {}
+local commonUtil  = {
 }
 local function getPlayer()
     if omw and world then
@@ -29,7 +29,18 @@ function commonUtil.getActorId(actor)
     end
 end
 
+local actor1Saved
+local actor2Saved
+local actor1EquipSaved = {}
+local actor2EquipSaved = {}
+local actor2DestCell
+local actor2DestPos
+local actor2DestRot
 function cloneData.transferPlayerData(actor1, actor2, doTP)
+     actor1Saved = actor1
+     actor2Saved = actor2
+     actor1EquipSaved = {}
+     actor2EquipSaved = {}
     local actor1id = commonUtil.getActorId(actor1)
     local actor2id = commonUtil.getActorId(actor2)
     local actor1CD = cloneData.getCloneDataForNPC(actor1)
@@ -69,6 +80,7 @@ function cloneData.transferPlayerData(actor1, actor2, doTP)
             local actor1pos = actor1.position
             local actor1cell = actor1.cell
             local actor1rot = actor1.rotation
+
             local actor2pos = actor2.position
             local actor2cell = actor2.cell
             local actor2rot = actor2.rotation
@@ -77,9 +89,26 @@ function cloneData.transferPlayerData(actor1, actor2, doTP)
             end
             actor2:teleport(actor1cell, actor1pos, actor1rot)
         end
-        cloneData.updateClonedataLocation(actor1,actor2)
-        cloneData.updateClonedataLocation(actor2,actor1)
+        cloneData.updateClonedataLocation(actor1, actor2)
+        cloneData.updateClonedataLocation(actor2, actor1)
     else
+        local actor1pos = actor1.position:copy()
+        local actor1cell = actor1.cell.name
+        local actor1rot = actor1.orientation:copy()
+
+        local actor2pos = actor2.position:copy()
+        local actor2cell = actor2.cell.name
+        local actor2rot = actor2.orientation:copy()
+        actor2DestCell = actor2cell
+        actor2DestPos = actor2pos
+        actor2DestRot = actor2rot
+        local tp1 = tes3.positionCell({
+            reference = actor2,
+            position = actor1pos,
+            cell = actor1cell,
+            orientation = actor1rot,
+            teleportCompanions = false
+        })
         local actor1Inv = {}
         local actor2Inv = {}
         for index, item in ipairs(actor1.mobile.inventory) do
@@ -89,70 +118,70 @@ function cloneData.transferPlayerData(actor1, actor2, doTP)
             table.insert(actor2Inv, item)
         end
         for index, item in ipairs(actor1Inv) do
-            local equipped = actor1.object:hasItemEquipped(item.object)
             local objectId = item.object.id
-            tes3.transferItem({
-                from = actor1.mobile,
-                item = item.object,
-                to = actor2.mobile,
-                count = item.count,
-                playSound = false
-            })
+            local equipped = actor1.object:hasItemEquipped(objectId)
             if equipped then
-                actor2.mobile:equip({ item = objectId, playSound = false })
+                actor2EquipSaved[objectId] = true
+                actor1.mobile:unequip({ item =  objectId, playSound = false })
             end
+            tes3.transferItem({
+                from                = actor1.mobile,
+                item                = item.object,
+                to                  = actor2.mobile,
+                count               = item.count,
+                playSound           = false,
+                reevaluateEquipment = false,
+            })
         end
         for index, item in ipairs(actor2Inv) do
-            local equipped = actor2.object:hasItemEquipped(item.object)
             local objectId = item.object.id
-            tes3.transferItem({
-                from = actor2.mobile,
-                item = item.object,
-                to = actor1.mobile,
-                count = item.count,
-                playSound = false
-            })
+            local equipped = actor2.object:hasItemEquipped(objectId)
             if equipped then
-                actor1.mobile:equip({ item = objectId, playSound = false })
+                actor1EquipSaved[objectId] = true
+                actor2.mobile:unequip({ item =  objectId, playSound = false })
             end
+            tes3.transferItem({
+                from                = actor2.mobile,
+                item                = item.object,
+                to                  = actor1.mobile,
+                count               = item.count,
+                playSound           = false,
+                reevaluateEquipment = false,
+            })
         end
         if doTP ~= false then
-            
-            tes3.fadeOut({duration = 0.0001})
-            local actor1pos = actor1.position:copy()
-            local actor1cell = actor1.cell.name
-            local actor1rot = actor1.orientation:copy()
-
-            local actor2pos = actor2.position:copy()
-            local actor2cell = actor2.cell.name
-            local actor2rot = actor2.orientation:copy()
-            local tp1 = tes3.positionCell({
-                reference = actor2,
-                position = actor1pos,
-                cell = actor1cell,
-                orientation = actor1rot,
-                teleportCompanions = false
-            })
-            local tp2 = tes3.positionCell({
-                reference = actor1,
-                position = actor2pos,
-                cell = actor2cell,
-                orientation = actor2rot,
-                teleportCompanions = false
-            })
-
+            tes3.fadeOut({ duration = 0.0001 })
             if not tp1 then
                 error("Actor2 not TP")
             end
-            if not tp2 then
-                error("Actor1 not TP")
-            end
             local function onTimerComplete()
-                tes3.fadeIn({duration = 1})
+                for index, item in ipairs(actor1Saved.mobile.inventory) do
+                    local objectId = item.object.id
+                    if actor1EquipSaved[objectId] then
+                        actor1Saved.mobile:equip({ item = objectId, playSound = false })
+                        print("Equipped ".. objectId)
+                    end
+                end
+                for index, item in ipairs(actor2Saved.mobile.inventory) do
+                    local objectId = item.object.id
+                    if actor2EquipSaved[objectId] then
+                        actor2Saved.mobile:equip({ item = objectId, playSound = false })
+                        print("Equipped ".. objectId)
+                    end
+                end
+                local tp2 = tes3.positionCell({
+                    reference = actor1Saved,
+                    position = actor2DestPos,
+                    cell = actor2DestCell,
+                    orientation = actor2DestRot,
+                    teleportCompanions = false
+                })
+    
+                tes3.fadeIn({ duration = 1 })
             end
-            
+
             -- Create our timer to fire the above function after 30 seconds.
-            timer.start({ duration = 0.3, callback = onTimerComplete })
+            timer.start({ duration = 1, callback = onTimerComplete })
         end
     end
 end
@@ -295,7 +324,7 @@ function cloneData.setCloneDataForNPCID(cloneID, newID, type)
     cloneData.setCloneData(cdata)
 end
 
-function cloneData.updateClonedataLocation(actor,tempActor)
+function cloneData.updateClonedataLocation(actor, tempActor)
     local currentId = commonUtil.getActorId(actor)
     local cdata = cloneData.getCloneData()
     if not tempActor then
@@ -317,7 +346,7 @@ function cloneData.getCloneObject(cloneId)
         if value.id == cloneId then
             local ref = commonUtil.getReferenceById(value.currentId, value.locationData)
             if not ref then
-            error("Could not find actor " .. value.currentId.. value.locationData.cell)
+                error("Could not find actor " .. value.currentId .. value.locationData.cell)
             end
             return ref
         end
@@ -359,7 +388,7 @@ function commonUtil.getCellName(actor)
     if not omw then
         return actor.mobile.cell.name
     else
-        if actor.cell.name == "" and actor.cell.isExterior  then
+        if actor.cell.name == "" and actor.cell.isExterior then
             return actor.cell.region
         end
         return actor.cell.name
@@ -381,7 +410,7 @@ function cloneData.getMenuData()
     for index, value in pairs(cdata) do
         local newData = { id = value.id, name = value.name, info = {} }
         local actor = cloneData.getCloneObject(value.id)
-        if not actor then 
+        if not actor then
             error("Couldn't find actor " .. value.id)
         end
         newData.info["loc"] = "Current Location: " .. commonUtil.getCellName(actor)
