@@ -4,8 +4,19 @@ local _, nearby     = pcall(require, "openmw.nearby")
 local _, types      = pcall(require, "openmw.types")
 local _, interfaces = pcall(require, "openmw.interfaces")
 local _, util       = pcall(require, "openmw.util")
-local cloneData     = require("scripts.CloningAvatar.common.cloneData")
-local commonUtil    = {}
+
+local cloneMenu
+local pathPrefix    = "VerticalityGangProject.scripts.CloningAvatar"
+
+if omw then
+    pathPrefix = "scripts.CloningAvatar"
+end
+if not omw then
+    cloneMenu = include(pathPrefix .. ".mwse.cloneMenu")
+end
+local cloneData  = require(pathPrefix .. ".common.cloneData")
+--cutil = require("VerticalityGangProject.scripts.CloningAvatar.common.commonUtil")
+local commonUtil = {}
 function commonUtil.getPlayer()
     print(omw, world == nil)
     if omw and world then
@@ -15,6 +26,12 @@ function commonUtil.getPlayer()
     elseif not omw then
         return tes3.getReference("player")
     end
+end
+
+function commonUtil.resurrectPlayer()
+    commonUtil.setActorHealth(tes3.player.mobile, 100)
+    tes3.player.mobile:resurrect({ resetState = false, })
+    commonUtil.showMessage("Rezurrect time")
 end
 
 function commonUtil.getReferenceById(id, locationData)
@@ -60,12 +77,16 @@ end
 function commonUtil.getActorId(actor)
     if omw then
         return actor.id
+    else
+        return actor.id
     end
 end
 
 function commonUtil.getRefRecordId(obj)
     if omw then
         return obj.recordId:lower()
+    else
+        return obj.baseObject.id
     end
 end
 
@@ -81,30 +102,9 @@ function commonUtil.getLocationData(obj)
             py = obj.cell.gridY,
             position = obj.position,
             rotation = obj.rotation,
-            worldSpaceId = obj.cell.worldSpaceId
+            worldSpaceId = obj.cell.worldSpaceId,
+            region = obj.cell.region
         }
-    end
-end
-
-function commonUtil.getCloneRecord()
-    if omw then
-        local playerRecord = types.NPC.record(getPlayer())
-        local rec = {
-            name = playerRecord.name,
-            template = types.NPC.record("ZHAC_AvatarBase"),
-            isMale = playerRecord.isMale,
-            head = playerRecord.head,
-            hair = playerRecord.hair,
-            class = playerRecord.class,
-            race = playerRecord.race
-        }
-        if types.NPC.createRecordDraft then
-            local ret = types.NPC.createRecordDraft(rec)
-            local record = world.overrideRecord(ret, ret.id)
-            return record
-        else
-            return types.NPC.record("ZHAC_AvatarBase")
-        end
     end
 end
 
@@ -112,36 +112,40 @@ function commonUtil.setObjectState(id, state)
     local obj = commonUtil.getReferenceById(id, { cell = commonUtil.getPlayer().cell })
     if omw then
         obj.enabled = state
+    else
+        tes3.setEnabled({ reference = obj, enabled = state })
     end
 end
 
 function commonUtil.setActorHealth(actor, health)
     if omw then
         actor:sendEvent("CA_setHealth", health)
-    end
-end
-
-function commonUtil.createPlayerClone(cell, position, rotation)
-    local newActor
-    if omw then
-        if position.x then
-            position = util.vector3(position.x, position.y, position.z)
-        end
-        newActor = world.createObject(getCloneRecord().id)
-        newActor:teleport(cell, position, rotation)
-        return newActor
+    else
+        actor.health.current = health
     end
 end
 
 function commonUtil.teleportActor(actor, cellName, pos)
     if omw then
         actor:teleport(cellName, util.vector3(pos.x, pos.y, pos.z))
+    else
+        tes3.positionCell({ reference = actor, cell = cellName, position = tes3vector3.new(pos.x, pos.y, pos.z) })
     end
 end
 
 function commonUtil.openCloneMenu()
     if omw then
         core.sendGlobalEvent("openClonePlayerMenu")
+    else
+        cloneMenu.createWindow()
+    end
+end
+
+function commonUtil.showMessage(msg)
+    if omw then
+        world.players[1]:sendEvent("showMessage", msg)
+    else
+        tes3ui.showNotifyMenu(msg)
     end
 end
 

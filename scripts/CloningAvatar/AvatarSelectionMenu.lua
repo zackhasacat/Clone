@@ -5,7 +5,7 @@ local core = require("openmw.core")
 local I = require("openmw.interfaces")
 local storage = require("openmw.storage")
 local self = require("openmw.self")
-local cloneData  
+local cloneData
 --usage:
 local playerSettings = storage.playerSection("MessageBoxData")
 local winCreated
@@ -16,7 +16,7 @@ local textSize = 20
 local menuOptions
 local function addMenuOption(id, text, selected)
     local val = { id = id, text = text, selected = selected or false, highlighted = false }
-    table.insert(menuOptions,val)
+    table.insert(menuOptions, val)
     return val
 end
 local function padString(str, length)
@@ -67,8 +67,8 @@ local function mouseClick(mouseEvent, data)
     local id = data.props.id
     for key, value in ipairs(menuOptions) do
         if value.id == id then
-            if menuOptions[key].selected  == true then
-                core.sendGlobalEvent("SwitchToClone",id)
+            if menuOptions[key].selected == true then
+                core.sendGlobalEvent("SwitchToClone", id)
                 ui.showMessage("Clicked again" .. id)
                 I.UI.setMode(nil)
                 winCreated:destroy()
@@ -136,20 +136,20 @@ local function renderListItem(id)
             autoSize = false,
             selected = data.selected,
             text = text,
-            id =  menuOptions[id].id,
+            id = menuOptions[id].id,
             -- size = util.vector2(400, 400),
         },
         events = {
             mousePress = async:callback(mouseClick),
-          --  mouseMove = async:callback(mouseMove),
-          --  focusLoss = async:callback(focusLoss),
+            --  mouseMove = async:callback(mouseMove),
+            --  focusLoss = async:callback(focusLoss),
         },
         content = ui.content {
             {
                 events = {
-                   -- mousePress = async:callback(mouseClick),
-               ----     mouseMove = async:callback(mouseMove),
-                --    focusLoss = async:callback(focusLoss),
+                    -- mousePress = async:callback(mouseClick),
+                    ----     mouseMove = async:callback(mouseMove),
+                    --    focusLoss = async:callback(focusLoss),
                 },
                 template = template,
                 alignment = ui.ALIGNMENT.Center,
@@ -157,14 +157,14 @@ local function renderListItem(id)
                     anchor = util.vector2(0, -0.5),
                     --  size = util.vector2(400, 400),
                     autoSize = false,
-                    id =  menuOptions[id].id,
+                    id = menuOptions[id].id,
                 },
                 content = resources
             },
         }
     }
 end
-local staticList = {"Health: 100","Name: Yes"}
+local staticList = { "Health: 100", "Name: Yes" }
 function selMenu.showMessageBox(ncloneData, textLines, buttons)
     if ncloneData then
         cloneData = ncloneData
@@ -178,12 +178,18 @@ function selMenu.showMessageBox(ncloneData, textLines, buttons)
     end
     local contents = {}
     local contents2 = {}
-    local table_contents = {} -- Table to hold the generated items
+    local table_contents = {}  -- Table to hold the generated items
     local table_contents2 = {} -- Table to hold the generated items
+    local selectedMenuOption
     if not menuOptions then
         menuOptions = {}
         for index, value in ipairs(cloneData) do
-            local mopt = addMenuOption(value.id, value.name, false)
+            local selected = false
+            if value.realId == self.id then
+                selected = true
+                selectedMenuOption = value.id
+            end
+            local mopt = addMenuOption(value.id, value.name, selected)
             local content = {} -- Create a new table for each value of x
 
             table.insert(content, renderListItem(mopt.id))
@@ -193,7 +199,9 @@ function selMenu.showMessageBox(ncloneData, textLines, buttons)
         for key, value in ipairs(menuOptions) do
             local mopt = value
             local content = {} -- Create a new table for each value of x
-
+            if value.selected then
+                selectedMenuOption = value.id
+            end
             table.insert(content, renderListItem(mopt.id))
             table.insert(contents, content)
         end
@@ -201,12 +209,19 @@ function selMenu.showMessageBox(ncloneData, textLines, buttons)
     if (#contents == 0) then
         error("No content items")
     end
-    for key, value in ipairs(staticList) do
-        local mopt = value
-        local content = {} -- Create a new table for each value of x
+    for index, value in ipairs(cloneData) do
+        if value.id == selectedMenuOption then
+            for key, valuex in pairs(value.info) do
 
-        table.insert(content, textContent(value))
-        table.insert(contents2, content)
+                local mopt = valuex
+                local content = {} -- Create a new table for each value of x
+        
+                table.insert(content, textContent(valuex))
+                table.insert(contents2, content)
+            end
+        end
+    end
+    for key, value in ipairs(staticList) do
     end
 
     for index, contentx in ipairs(contents) do --Print the actual text lines
@@ -276,10 +291,10 @@ function selMenu.showMessageBox(ncloneData, textLines, buttons)
     }
     local horizontalMenu = { --This includes the top text, and the botton buttons.
         type = ui.TYPE.Flex,
-        content = ui.content({ itemK,itemB }),
+        content = ui.content({ itemK, itemB }),
         props = {
             --  size = util.vector2(450, 300),
-            horizontal =true,
+            horizontal = true,
             arrange = ui.ALIGNMENT.Start,
             align = ui.ALIGNMENT.Start,
             autoSize = true

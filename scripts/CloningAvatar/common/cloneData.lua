@@ -1,12 +1,15 @@
-local dataManager   = require("scripts.CloningAvatar.common.dataManager")
+local pathPrefix    = "VerticalityGangProject.scripts.CloningAvatar"
 local omw, core     = pcall(require, "openmw.core")
 local _, world      = pcall(require, "openmw.world")
 local _, nearby     = pcall(require, "openmw.nearby")
 local _, types      = pcall(require, "openmw.types")
-local _, util      = pcall(require, "openmw.util")
+local _, util       = pcall(require, "openmw.util")
 local _, interfaces = pcall(require, "openmw.interfaces")
-local omw           = true
-local cloneData = {}
+if omw then
+    pathPrefix = "scripts.CloningAvatar"
+end
+local dataManager   = require(pathPrefix .. ".common.dataManager")
+local cloneData     = {}
 local commonUtil    = {
 }
 local function getPlayer()
@@ -21,21 +24,26 @@ end
 function commonUtil.getActorId(actor)
     if omw then
         return actor.id
+    else
+        return actor.id
     end
 end
 
- function cloneData.transferPlayerData(actor1, actor2, doTP)
+function cloneData.transferPlayerData(actor1, actor2, doTP)
     local actor1id = commonUtil.getActorId(actor1)
     local actor2id = commonUtil.getActorId(actor2)
     local actor1CD = cloneData.getCloneDataForNPC(actor1)
     local actor2CD = cloneData.getCloneDataForNPC(actor2)
     if not actor1CD and actor1id == commonUtil.getActorId(getPlayer()) then
-        
-       cloneData.markActorAsClone(actor1, "RealPlayer")
+        print("Saved player data")
+        cloneData.markActorAsClone(actor1, "RealPlayer")
+        actor1CD = cloneData.getCloneDataForNPC(actor1)
     end
     if actor1CD and actor2CD then
-       cloneData.setCloneDataForNPCID(actor1CD.id, actor2id)
-       cloneData.setCloneDataForNPCID(actor2CD.id, actor1id)
+        cloneData.setCloneDataForNPCID(actor1CD.id, actor2id)
+        cloneData.setCloneDataForNPCID(actor2CD.id, actor1id)
+    else
+        error("Missing data")
     end
     if omw then
         local actor1Inv = {}
@@ -69,11 +77,87 @@ end
             end
             actor2:teleport(actor1cell, actor1pos, actor1rot)
         end
+        cloneData.updateClonedataLocation(actor1,actor2)
+        cloneData.updateClonedataLocation(actor2,actor1)
+    else
+        local actor1Inv = {}
+        local actor2Inv = {}
+        for index, item in ipairs(actor1.mobile.inventory) do
+            table.insert(actor1Inv, item)
+        end
+        for index, item in ipairs(actor2.mobile.inventory) do
+            table.insert(actor2Inv, item)
+        end
+        for index, item in ipairs(actor1Inv) do
+            local equipped = actor1.object:hasItemEquipped(item.object)
+            local objectId = item.object.id
+            tes3.transferItem({
+                from = actor1.mobile,
+                item = item.object,
+                to = actor2.mobile,
+                count = item.count,
+                playSound = false
+            })
+            if equipped then
+                actor2.mobile:equip({ item = objectId, playSound = false })
+            end
+        end
+        for index, item in ipairs(actor2Inv) do
+            local equipped = actor2.object:hasItemEquipped(item.object)
+            local objectId = item.object.id
+            tes3.transferItem({
+                from = actor2.mobile,
+                item = item.object,
+                to = actor1.mobile,
+                count = item.count,
+                playSound = false
+            })
+            if equipped then
+                actor1.mobile:equip({ item = objectId, playSound = false })
+            end
+        end
+        if doTP ~= false then
+            
+            tes3.fadeOut({duration = 0.0001})
+            local actor1pos = actor1.position:copy()
+            local actor1cell = actor1.cell.name
+            local actor1rot = actor1.orientation:copy()
+
+            local actor2pos = actor2.position:copy()
+            local actor2cell = actor2.cell.name
+            local actor2rot = actor2.orientation:copy()
+            local tp1 = tes3.positionCell({
+                reference = actor2,
+                position = actor1pos,
+                cell = actor1cell,
+                orientation = actor1rot,
+                teleportCompanions = false
+            })
+            local tp2 = tes3.positionCell({
+                reference = actor1,
+                position = actor2pos,
+                cell = actor2cell,
+                orientation = actor2rot,
+                teleportCompanions = false
+            })
+
+            if not tp1 then
+                error("Actor2 not TP")
+            end
+            if not tp2 then
+                error("Actor1 not TP")
+            end
+            local function onTimerComplete()
+                tes3.fadeIn({duration = 1})
+            end
+            
+            -- Create our timer to fire the above function after 30 seconds.
+            timer.start({ duration = 0.3, callback = onTimerComplete })
+        end
     end
-    cloneData.updateClonedataLocation(actor1)
-    cloneData.updateClonedataLocation(actor2)
 end
-function commonUtil.getCloneRecord()
+
+function cloneData.getCloneRecord()
     if omw then
         local playerRecord = types.NPC.record(getPlayer())
         local rec = {
@@ -87,13 +171,25 @@ function commonUtil.getCloneRecord()
         }
         if types.NPC.createRecordDraft then
             local ret = types.NPC.createRecordDraft(rec)
-            local record = world.overrideRecord(ret,ret.id)
+            local record = world.overrideRecord(ret, ret.id)
             return record
         else
             return types.NPC.record("ZHAC_AvatarBase")
         end
+    else
+        local cloneRecord = tes3.getObject("ZHAC_AvatarBase")
+        local playerRecord = tes3.getObject("player")
+        cloneRecord.hair = playerRecord.hair
+        cloneRecord.race = playerRecord.race
+        cloneRecord.name = playerRecord.name
+        cloneRecord.female = playerRecord.female
+        cloneRecord.class = playerRecord.class
+        cloneRecord.head = playerRecord.head
+        cloneRecord.modified = true
+        return cloneRecord
     end
 end
+
 function commonUtil.getLocationData(obj)
     if omw then
         return {
@@ -107,14 +203,27 @@ function commonUtil.getLocationData(obj)
         }
     end
 end
- function commonUtil.createPlayerClone(cell, position, rotation)
+
+function commonUtil.createPlayerClone(cell, position, rotation)
     local newActor
     if omw then
         if position.x then
-            position = util.vector3(position.x,position.y,position.z)
+            position = util.vector3(position.x, position.y, position.z)
         end
-        newActor = world.createObject(commonUtil.getCloneRecord().id)
+        newActor = world.createObject(cloneData.getCloneRecord().id)
         newActor:teleport(cell, position, rotation)
+        return newActor
+    else
+        if not rotation then
+            rotation = tes3vector3.new(0, 0, 0)
+        end
+        position = tes3vector3.new(position.x, position.y, position.z)
+        newActor = tes3.createReference({
+            object = cloneData.getCloneRecord(),
+            position = position,
+            cell = cell,
+            orientation = rotation
+        })
         return newActor
     end
 end
@@ -132,8 +241,9 @@ function commonUtil.getReferenceById(id, locationData)
             end
         else
             local cell
-            if locationData.exterior then
-                cell = world.getExteriorCell(locationData.px, locationData.py, locationData.worldSpaceId)
+            if locationData.exterior == true then
+                print("Found Exterior")
+                cell = world.getExteriorCell(locationData.px, locationData.py)
             else
                 cell = world.getCellByName(locationData.cell)
             end
@@ -157,13 +267,15 @@ function commonUtil.getReferenceById(id, locationData)
     end
 end
 
- function cloneData.getCloneData()
+function cloneData.getCloneData()
     return dataManager.getValueOrTable("CloneData")
 end
- function cloneData.setCloneData(data)
+
+function cloneData.setCloneData(data)
     dataManager.setValue("CloneData", data)
 end
- function cloneData.getCloneDataForNPC(actor)
+
+function cloneData.getCloneDataForNPC(actor)
     local currentId = commonUtil.getActorId(actor)
     for index, value in pairs(cloneData.getCloneData()) do
         if value.currentId == currentId then
@@ -172,7 +284,8 @@ end
     end
     return nil
 end
- function cloneData.setCloneDataForNPCID(cloneID, newID,type)
+
+function cloneData.setCloneDataForNPCID(cloneID, newID, type)
     local cdata = cloneData.getCloneData()
     for index, value in pairs(cdata) do
         if value.id == cloneID then
@@ -181,63 +294,115 @@ end
     end
     cloneData.setCloneData(cdata)
 end
- function cloneData.updateClonedataLocation(actor)
+
+function cloneData.updateClonedataLocation(actor,tempActor)
     local currentId = commonUtil.getActorId(actor)
     local cdata = cloneData.getCloneData()
+    if not tempActor then
+        tempActor = actor
+    end
     for index, value in pairs(cdata) do
         if value.currentId == currentId then
-            cdata[index].locationData = commonUtil.getLocationData(actor)
+            cdata[index].locationData = commonUtil.getLocationData(tempActor)
             return value
         end
     end
     cloneData.setCloneData(cdata)
     return nil
 end
- function cloneData.getCloneObject(cloneId)
+
+function cloneData.getCloneObject(cloneId)
     local cdata = cloneData.getCloneData()
     for index, value in pairs(cdata) do
         if value.id == cloneId then
-            return commonUtil.getReferenceById(value.currentId, value.locationData)
+            local ref = commonUtil.getReferenceById(value.currentId, value.locationData)
+            if not ref then
+            error("Could not find actor " .. value.currentId.. value.locationData.cell)
+            end
+            return ref
         end
     end
 end
-function cloneData.markActorAsClone(actor,type)
 
-
+function cloneData.markActorAsClone(actor, type)
+    local playerName
+    if omw then
+        playerName = types.NPC.record("player").name
+    else
+        playerName = tes3.player.object.name
+    end
     local cdata = cloneData.getCloneData()
-    local nextCloneId = dataManager.getValueOrInt("NextCloneId")+ 1
+    local nextCloneId = dataManager.getValueOrInt("NextCloneId") + 1
     local newCloneData = {}
     newCloneData.currentId = commonUtil.getActorId(actor)
     newCloneData.cloneType = "PlayerClone"
     if type ~= nil then
         newCloneData.cloneType = type
-        newCloneData.name = types.NPC.record("player").name
+        newCloneData.name = playerName
     else
-        
-    newCloneData.name = "Clone " ..nextCloneId
+        newCloneData.name = "Clone " .. nextCloneId
     end
     newCloneData.id = nextCloneId
-    dataManager.setValue("NextCloneId", nextCloneId )
+    dataManager.setValue("NextCloneId", nextCloneId)
     cdata[nextCloneId] = newCloneData
     cloneData.setCloneData(cdata)
     return { cloneData = cdata, createdCloneId = nextCloneId, newClone = actor }
 end
- function cloneData.addCloneToWorld(cell, position, rotation,cloneType)
+
+function cloneData.addCloneToWorld(cell, position, rotation, cloneType)
     local newClone = commonUtil.createPlayerClone(cell, position, rotation)
-    local data = cloneData.markActorAsClone(newClone,cloneType)
+    local data = cloneData.markActorAsClone(newClone, cloneType)
     return { cloneData = data.cloneData, createdCloneId = data.createdCloneId, newClone = newClone }
 end
- function cloneData.storePlayer()
 
+function commonUtil.getCellName(actor)
+    if not omw then
+        return actor.mobile.cell.name
+    else
+        if actor.cell.name == "" and actor.cell.isExterior  then
+            return actor.cell.region
+        end
+        return actor.cell.name
+    end
+end
+
+function commonUtil.getActorHealth(actor)
+    if omw then
+        return types.Actor.stats.dynamic.health(actor).current
+    else
+        return actor.mobile.health.current
+    end
+end
+
+function cloneData.getMenuData()
+    local cdata = cloneData.getCloneData()
+    local menuData = {}
+
+    for index, value in pairs(cdata) do
+        local newData = { id = value.id, name = value.name, info = {} }
+        local actor = cloneData.getCloneObject(value.id)
+        if not actor then 
+            error("Couldn't find actor " .. value.id)
+        end
+        newData.info["loc"] = "Current Location: " .. commonUtil.getCellName(actor)
+        newData.info["health"] = "Health: " .. tostring(commonUtil.getActorHealth(actor))
+        newData.realId = commonUtil.getActorId(actor)
+        table.insert(menuData, newData)
+    end
+    return menuData
+end
+
+function cloneData.storePlayer()
     local cdata = cloneData.getCloneData()
     local player = getPlayer()
-    
+
     for index, value in pairs(cdata) do
         if value.cloneType == "RealPlayer" then
             error("Player already exists")
         end
     end
-    local newClone = cloneData.addCloneToWorld(player.cell,player.position,nil,"RealPlayer")
-    commonUtil.transferPlayerData(player,newClone)
+    local newClone = cloneData.addCloneToWorld(player.cell, player.position, nil, "RealPlayer")
+    commonUtil.transferPlayerData(player, newClone)
 end
+
 return cloneData

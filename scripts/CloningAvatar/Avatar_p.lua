@@ -4,6 +4,7 @@ local types = require('openmw.types')
 local self = require('openmw.self')
 local camera = require('openmw.camera')
 local debug = require('openmw.debug')
+local ui = require('openmw.ui')
 local deadCamera = false
 local AvatarSelect = require("scripts.CloningAvatar.AvatarSelectionMenu")
 local function CA_setEquipment(equip)
@@ -48,6 +49,9 @@ end
 local function onKeyPress(k)
 core.sendGlobalEvent("onKeyPress",k.symbol)
 end
+local function showMessage(msg)
+ui.showMessage(msg)
+end
 return {
     interfaceName  = "CloningAvatars",
     interface      = {
@@ -64,5 +68,6 @@ return {
         RegainControl = RegainControl,
         closeMenuWindow_Clone = closeMenuWindow_Clone,
         openClonePlayerMenu = openClonePlayerMenu,
+        showMessage = showMessage,
     }
 }

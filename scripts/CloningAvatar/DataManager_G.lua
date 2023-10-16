@@ -13,9 +13,6 @@ end
 local function getValue(varName)
     return data[varName]
 end
-local function openClonePlayerMenu()
-world.players[1]:sendEvent("openClonePlayerMenu",data["CloneData"])
-end
 return {
     interfaceName = "CA_DataManager",
     interface = {
@@ -27,6 +24,5 @@ return {
         onLoad = onLoad
     },
     eventHandlers = {
-        openClonePlayerMenu = openClonePlayerMenu,
     }
 }

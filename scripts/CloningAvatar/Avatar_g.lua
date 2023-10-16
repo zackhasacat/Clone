@@ -89,6 +89,9 @@ end
 cloneData.transferPlayerData(world.players[1],destCLone)
 
 end
+local function openClonePlayerMenu()
+world.players[1]:sendEvent("openClonePlayerMenu",cloneData.getMenuData())
+end
 acti.addHandlerForType(types.NPC, activateNPC)
 return {
     interfaceName  = "CloningAvatars",
@@ -106,6 +109,7 @@ return {
         rezPlayer = rezPlayer,
         playerRespawn = playerRespawn,
         updateClonedataLocation = updateClonedataLocation,
-        SwitchToClone= SwitchToClone
+        SwitchToClone= SwitchToClone,
+        openClonePlayerMenu = openClonePlayerMenu,
     }
 }
