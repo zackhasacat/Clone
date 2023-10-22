@@ -36,7 +36,9 @@ end
 end
 function commonUtil.resurrectPlayer()
     commonUtil.setActorHealth(tes3.player.mobile, 100)
+    if not omw then
     tes3.player.mobile:resurrect({ resetState = false, })
+    end
     commonUtil.showMessage("Rezurrect time")
 end
 
@@ -140,6 +142,10 @@ function commonUtil.teleportActor(actor, cellName, pos)
 end
 
 function commonUtil.openCloneMenu()
+    local canOpen = cloneData.playerIsInClone()
+    if not canOpen then
+        return
+    end
     if omw then
         core.sendGlobalEvent("openClonePlayerMenu")
     else

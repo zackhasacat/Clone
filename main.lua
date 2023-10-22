@@ -17,24 +17,25 @@ local function death(e)
     end
 end
 local function soundObjectPlayCallback(e)
-  --  return false
+    --  return false
 end
 event.register(tes3.event.soundObjectPlay, soundObjectPlayCallback)
 local function onDamage(e)
-
     if e.reference.id == tes3.player.id then
-	if e.mobile.health.current - math.abs(e.damage) <= 1 then
-        commonUtil.showMessage("Killed")
-        e.damage = 0
-        return false
+        if e.mobile.health.current - math.abs(e.damage) <= 1 then
+            commonUtil.showMessage("Killed")
+            e.damage = 0
+            e.mobile.health.current = 1000
+            events.onPlayerDeath()
+            return false
+        end
     end
-end
 end
 event.register(tes3.event["keyDown"], keyDown)
 event.register(tes3.event["activate"], activate)
 event.register(tes3.event["death"], death)
 event.register(tes3.event.loaded, events.onInit)
-event.register(tes3.event["damage"], onDamage)
+event.register(tes3.event["damage"], onDamage, { priority = -100 })
 if command then
     command.registerCommands({
         {

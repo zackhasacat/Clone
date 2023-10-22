@@ -10,7 +10,7 @@ local actorSwap
 if omw then
     pathPrefix = "scripts.CloningAvatar"
     actorSwap = require(pathPrefix .. '.ActorSwap')
-end  
+end
 local dataManager = require(pathPrefix .. ".common.dataManager")
 local cloneData   = {}
 local commonUtil  = {
@@ -39,9 +39,28 @@ local actor2EquipSaved = {}
 local actor2DestCell
 local actor2DestPos
 local actor2DestRot
+function commonUtil.removeActiveEffects(actorRef)
+    if omw then
+
+    else
+        local effects = actorRef.mobile:getActiveMagicEffects()
+        for key, value in pairs(effects) do
+            if value.duration ~= 1 then
+                tes3.removeEffects({ reference = actorRef, effect = value.effectId, })
+            end
+        end
+    end
+end
+
+function cloneData.playerIsInClone()
+    local data = cloneData.getCloneDataForNPC(getPlayer())
+    if not data then return false end
+    if data.cloneType == "RealPlayer" then return false end
+    return true
+end
+
 function cloneData.transferPlayerData(actor1, actor2, doTP)
-    
-    actor1Saved = actor1--player
+    actor1Saved = actor1 --player
     actor2Saved = actor2
     actor1EquipSaved = {}
     actor2EquipSaved = {}
@@ -64,7 +83,8 @@ function cloneData.transferPlayerData(actor1, actor2, doTP)
     elseif not actor2CD then
         error("Missing data for actor2")
     end
-    if omw then
+    commonUtil.transferStats(actor1, actor2)
+    if omw then --Logic for OpenMW
         local actor1Inv = {}
         local actor2Inv = {}
         local actor1Equip = types.Actor.getEquipment(actor1)
@@ -101,33 +121,29 @@ function cloneData.transferPlayerData(actor1, actor2, doTP)
             end
             actor2:teleport(actor1cell, actor1pos, actor1rot)
         end
-        actor1:sendEvent("setplayerCurrentCloneType",actor2CD.cloneType)
+        actor1:sendEvent("setplayerCurrentCloneType", actor2CD.cloneType)
         cloneData.updateClonedataLocation(actor1, actor2)
         cloneData.updateClonedataLocation(actor2, actor1)
-        commonUtil.copyStats(actor1,actor2)
-        commonUtil.copyStats(actor2,actor1)
         return { actor1 = actor1, actor2 = actor2 }
-    else
-        local actor1pos = actor1.position:copy()
-        local actor1cell = actor1.cell.name
-        local actor1rot = actor1.orientation:copy()
+    else --Logic for MWSE
+        commonUtil.copyStats(actor2, actor1)
+        local actor1pos     = tes3vector3.new(actor1.position.x, actor1.position.y, actor1.position.z)
+        local actor1cell    = actor1.cell.name
+        local actor1rot     = actor1.orientation:copy()
 
-        local actor2pos = actor2.position:copy()
-        local actor2cell = actor2.cell.name
-        local actor2rot = actor2.orientation:copy()
-        actor2DestCell = actor2cell
-        actor2DestPos = actor2pos
-        actor2DestRot = actor2rot
-        local tp1 = tes3.positionCell({
-            reference = actor2,
+        local actor2DestPos = tes3vector3.new(actor2.position.x, actor2.position.y, actor2.position.z)
+        local actor2cell    = actor2.cell.name
+        local actor2rot     = actor2.orientation:copy()
+        local tp1           = tes3.positionCell({
+            reference = actor2.mobile,
             position = actor1pos,
             cell = actor1cell,
             orientation = actor1rot,
-            teleportCompanions = false
         })
-        actor2.position = actor1pos
-        actor2.orientation = actor1rot
+        --actor2.position = actor1pos
+        --actor2.orientation = actor1rot
         print("T1: " .. tostring(tp1))
+        print(actor2.id)
         local actor1Inv = {}
         local actor2Inv = {}
         for index, item in ipairs(actor1.mobile.inventory) do
@@ -169,7 +185,7 @@ function cloneData.transferPlayerData(actor1, actor2, doTP)
             })
         end
         if doTP ~= false then
-           -- tes3.fadeOut({ duration = 0.0001 })
+            tes3.fadeOut({ duration = 0.0001 })
             if not tp1 then
                 error("Actor2 not TP")
             end
@@ -188,20 +204,21 @@ function cloneData.transferPlayerData(actor1, actor2, doTP)
                         print("Equipped " .. objectId)
                     end
                 end
+                print(actor2DestPos)
                 local tp2 = tes3.positionCell({
-                    reference = actor1Saved,
-                    position = actor2DestPos,
-                    cell = actor2DestCell,
-                    orientation = actor2DestRot,
-                    teleportCompanions = false
+                    reference       = actor1,
+                    position        = actor2DestPos,
+                    cell            = actor2cell,
+                    orientation     = actor2rot,
+                    forceCellChange = true,
                 })
-                actor1Saved.position = actor2DestPos
+                --actor1.position = actor2pos
                 print("TP2: " .. tostring(tp2))
 
-               -- tes3.fadeIn({ duration = 1 })
+                tes3.fadeIn({ duration = 0.1 })
             end
 
-            timer.start({ duration = 2, callback = onTimerComplete })
+            timer.start({ duration = 0.1, callback = onTimerComplete })
         end
     end
 end
@@ -253,7 +270,70 @@ function commonUtil.getLocationData(obj)
     end
 end
 
-function commonUtil.copyStats(actorSource, actorTarget)
+function commonUtil.transferStats(actor1, actor2) --transfer current stat info between two actors, do not touch base(of actor 1 at least)
+    if omw then
+
+    else
+        local a1m = actor1.mobile
+        local a2m = actor2.mobile
+        local actor1stats = {}
+        local actor2stats = {}
+        for index, value in pairs(a1m.attributes) do
+            local aval
+            for index1, avalue in pairs(tes3.attribute) do
+                if index == avalue + 1 then
+                    aval = index1
+                end
+            end
+            actor1stats[aval] = { current = value.current + 0, base = value.base }
+        end
+        for index, value in pairs(a1m.skills) do
+            local aval
+            for index1, avalue in pairs(tes3.skill) do
+                if index == avalue + 1 then
+                    aval = index1
+                end
+            end
+            actor1stats[aval] = { current = value.current, base = value.base }
+        end
+
+        for index, value in pairs(a2m.attributes) do
+            local aval
+            for index1, avalue in pairs(tes3.attribute) do
+                if index == avalue + 1 then
+                    aval = index1
+                end
+            end
+            actor2stats[aval] = { current = value.current, base = value.base }
+        end
+        for index, value in pairs(a2m.skills) do
+            local aval
+            for index1, avalue in pairs(tes3.skill) do
+                if index == avalue + 1 then
+                    aval = index1
+                end
+            end
+            actor2stats[aval] = { current = value.current, base = value.base }
+        end
+        actor2stats["health"] = { current = a2m.health.current, base = a2m.health.base }
+        actor2stats.fatigue = { current = a2m.fatigue.current, base = a2m.fatigue.base }
+        actor2stats.magicka = { current = a2m.magicka.current, base = a2m.magicka.base }
+
+        actor1stats["health"]  = { current = a1m.health.current }
+        actor1stats.fatigue = { current = a1m.fatigue.current }
+        actor1stats.magicka = { current = a1m.magicka.current, base = a1m.magicka.base }
+        for index, value in pairs(actor2stats) do
+            print(index)
+            tes3.setStatistic({ reference = a1m, name = index, current = value.current })
+        end
+        for index, value in pairs(actor1stats) do
+            print(index)
+            tes3.setStatistic({ reference = a2m, name = index, current = value.current })
+        end
+    end
+end
+
+function commonUtil.copyStats(actorSource, actorTarget) --one way copy of stats from one actor to another
     if omw then
         for key, val in pairs(actorSource.type.stats.attributes) do
             print(key)
@@ -273,7 +353,7 @@ function commonUtil.copyStats(actorSource, actorTarget)
                     key = key,
                     base = val(actorSource).base,
                     modifier = val(actorSource).modifier,
-                    current =  val(actorSource).current,
+                    current = val(actorSource).current,
                 })
         end
         for key, val in pairs(actorSource.type.stats.skills) do
@@ -286,6 +366,37 @@ function commonUtil.copyStats(actorSource, actorTarget)
                     modifier = val(actorSource).modifier
                 })
         end
+    else
+        local asm = actorSource.mobile
+        local atm = actorTarget.mobile
+        local actor1stats = {}
+        for index, value in pairs(asm.attributes) do
+            local aval
+            for index1, avalue in pairs(tes3.attribute) do
+                if index == avalue + 1 then
+                    aval = index1
+                end
+            end
+            if aval then
+                print(aval)
+                tes3.setStatistic({ reference = atm, name = aval, current = value.base, base = value.base })
+            end
+        end
+        for index, value in pairs(asm.skills) do
+            local aval
+            for index1, avalue in pairs(tes3.skill) do
+                if index == avalue + 1 then
+                    aval = index1
+                end
+            end
+            if aval then
+                print(aval)
+                tes3.setStatistic({ reference = atm, name = aval, current = value.base, base = value.base })
+            end
+        end
+        tes3.setStatistic({ reference = atm, name = "health", current = asm.health.base, base = asm.health.base })
+        tes3.setStatistic({ reference = atm, name = "fatigue", current = asm.fatigue.base, base = asm.fatigue.base })
+        tes3.setStatistic({ reference = atm, name = "magicka", current = asm.magicka.base, base = asm.magicka.base })
     end
 end
 
@@ -353,8 +464,10 @@ function commonUtil.getReferenceById(id, locationData)
 end
 
 local function rezPlayer()
-    local scr = world.mwscript.getGlobalScript("ZHAC_PlayerRez", world.players[1])
-    scr.variables.doRez = 1
+    if omw then
+        local scr = world.mwscript.getGlobalScript("ZHAC_PlayerRez", world.players[1])
+        scr.variables.doRez = 1
+    end
 end
 
 function cloneData.getCloneData()
@@ -362,36 +475,44 @@ function cloneData.getCloneData()
 end
 
 local nextDest
-local function movePlayerToNewBody()
-    local player = world.players[1]
+function cloneData.movePlayerToNewBody()
+    local player = getPlayer()
     local currentID = cloneData.getCloneDataForNPC(player).id
     --  cloneData.removeCloneFromData(currentID)
     local destCLone = cloneData.getCloneObject(cloneData.getRealPlayerCloneID())
     local data = cloneData.transferPlayerData(world.players[1], destCLone)
     --destCLone.enabled = false
-    player:setScale(1)
-    player:sendEvent("RegainControl")
+    if omw then
+        player:setScale(1)
+        player:sendEvent("RegainControl")
+    else
+
+    end
 end
+
 local function playerRespawn()
 
 end
 function cloneData.handleCloneDeath()
-    local player = world.players[1]
+    local player = getPlayer()
     rezPlayer()
-    player:setScale(0.001)
+    -- player:setScale(0.001)
     --local deadAvatar = commonUtil.createPlayerClone(player.cell, player.position, player.rotation)
     local currentID = cloneData.getCloneDataForNPC(player).id
     --  cloneData.removeCloneFromData(currentID)
     local destCLone = cloneData.getCloneObject(cloneData.getRealPlayerCloneID())
-    local data = cloneData.transferPlayerData(world.players[1], destCLone)
+    local data = cloneData.transferPlayerData(player, destCLone)
     --destCLone.enabled = false
-    player:setScale(1)
-    player:sendEvent("RegainControl")
-    actorSwap.doActorSwap(player, destCLone, false)
-    destCLone:sendEvent("CA_setHealth", 0)
+    -- player:setScale(1)
+    if omw then
+        player:sendEvent("RegainControl")
+
+        actorSwap.doActorSwap(player, destCLone, false)
+        --async:newUnsavableSimulationTimer(5, cloneData.movePlayerToNewBody)
+    end
+    commonUtil.setActorHealth(destCLone, 0)
 
     --player:teleport(player.cell, util.vector3(player.position.x, player.position.y, player.position.z + 1000))
-    async:newUnsavableSimulationTimer(5, movePlayerToNewBody)
 end
 
 function cloneData.setCloneData(data)
@@ -405,6 +526,7 @@ function cloneData.getCloneDataForNPC(actor)
             return value
         end
     end
+    print("Found no clone data for " .. actor.id)
     return nil
 end
 
@@ -514,6 +636,14 @@ function commonUtil.getActorHealth(actor)
         return types.Actor.stats.dynamic.health(actor).current
     else
         return actor.mobile.health.current
+    end
+end
+
+function commonUtil.setActorHealth(actor, val)
+    if omw then
+        actor:sendEvent("CA_setHealth", val)
+    else
+        actor.mobile.health.current = val
     end
 end
 

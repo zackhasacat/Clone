@@ -40,7 +40,7 @@ function events.onKeyPress(keyChar)
 end
 
 function events.onPlayerDeath(player)
-    commonUtil.resurrectPlayer()
+    cloneData.handleCloneDeath()
 end
 
 function events.onConsoleCommand(command)
