@@ -6,10 +6,11 @@ local _, types      = pcall(require, "openmw.types")
 local _, util       = pcall(require, "openmw.util")
 local _, interfaces = pcall(require, "openmw.interfaces")
 local _, async      = pcall(require, "openmw.async")
+local actorSwap
 if omw then
     pathPrefix = "scripts.CloningAvatar"
-end
-local actorSwap   = require(pathPrefix .. '.ActorSwap')
+    actorSwap = require(pathPrefix .. '.ActorSwap')
+end  
 local dataManager = require(pathPrefix .. ".common.dataManager")
 local cloneData   = {}
 local commonUtil  = {
@@ -40,7 +41,7 @@ local actor2DestPos
 local actor2DestRot
 function cloneData.transferPlayerData(actor1, actor2, doTP)
     
-    actor1Saved = actor1
+    actor1Saved = actor1--player
     actor2Saved = actor2
     actor1EquipSaved = {}
     actor2EquipSaved = {}
@@ -124,6 +125,9 @@ function cloneData.transferPlayerData(actor1, actor2, doTP)
             orientation = actor1rot,
             teleportCompanions = false
         })
+        actor2.position = actor1pos
+        actor2.orientation = actor1rot
+        print("T1: " .. tostring(tp1))
         local actor1Inv = {}
         local actor2Inv = {}
         for index, item in ipairs(actor1.mobile.inventory) do
@@ -165,7 +169,7 @@ function cloneData.transferPlayerData(actor1, actor2, doTP)
             })
         end
         if doTP ~= false then
-            tes3.fadeOut({ duration = 0.0001 })
+           -- tes3.fadeOut({ duration = 0.0001 })
             if not tp1 then
                 error("Actor2 not TP")
             end
@@ -191,12 +195,13 @@ function cloneData.transferPlayerData(actor1, actor2, doTP)
                     orientation = actor2DestRot,
                     teleportCompanions = false
                 })
+                actor1Saved.position = actor2DestPos
+                print("TP2: " .. tostring(tp2))
 
-                tes3.fadeIn({ duration = 1 })
+               -- tes3.fadeIn({ duration = 1 })
             end
 
-            -- Create our timer to fire the above function after 30 seconds.
-            timer.start({ duration = 1, callback = onTimerComplete })
+            timer.start({ duration = 2, callback = onTimerComplete })
         end
     end
 end
@@ -213,12 +218,12 @@ function cloneData.getCloneRecord()
             class = playerRecord.class,
             race = playerRecord.race
         }
-        if types.NPC.createRecordDraft then
+        if types.NPC.createRecordDraft and true == false then
             local ret = types.NPC.createRecordDraft(rec)
             local record = world.overrideRecord(ret, ret.id)
             return record
         else
-            return types.NPC.record("ZHAC_AvatarBase")
+            return types.NPC.record("player")
         end
     else
         local cloneRecord = tes3.getObject("ZHAC_AvatarBase")
