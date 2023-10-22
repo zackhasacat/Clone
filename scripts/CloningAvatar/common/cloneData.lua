@@ -5,9 +5,11 @@ local _, nearby     = pcall(require, "openmw.nearby")
 local _, types      = pcall(require, "openmw.types")
 local _, util       = pcall(require, "openmw.util")
 local _, interfaces = pcall(require, "openmw.interfaces")
+local _, async      = pcall(require, "openmw.async")
 if omw then
     pathPrefix = "scripts.CloningAvatar"
 end
+local actorSwap   = require(pathPrefix .. '.ActorSwap')
 local dataManager = require(pathPrefix .. ".common.dataManager")
 local cloneData   = {}
 local commonUtil  = {
@@ -37,10 +39,11 @@ local actor2DestCell
 local actor2DestPos
 local actor2DestRot
 function cloneData.transferPlayerData(actor1, actor2, doTP)
-     actor1Saved = actor1
-     actor2Saved = actor2
-     actor1EquipSaved = {}
-     actor2EquipSaved = {}
+    
+    actor1Saved = actor1
+    actor2Saved = actor2
+    actor1EquipSaved = {}
+    actor2EquipSaved = {}
     local actor1id = commonUtil.getActorId(actor1)
     local actor2id = commonUtil.getActorId(actor2)
     local actor1CD = cloneData.getCloneDataForNPC(actor1)
@@ -74,14 +77,12 @@ function cloneData.transferPlayerData(actor1, actor2, doTP)
         end
         for index, item in ipairs(actor1Inv) do
             if item.count > 0 then
-                
-            item:moveInto(actor2)
+                item:moveInto(actor2)
             end
         end
         for index, item in ipairs(actor2Inv) do
             if item.count > 0 then
-                
-            item:moveInto(actor1)
+                item:moveInto(actor1)
             end
         end
         actor1:sendEvent("CA_setEquipment", actor2Equip)
@@ -99,8 +100,12 @@ function cloneData.transferPlayerData(actor1, actor2, doTP)
             end
             actor2:teleport(actor1cell, actor1pos, actor1rot)
         end
+        actor1:sendEvent("setplayerCurrentCloneType",actor2CD.cloneType)
         cloneData.updateClonedataLocation(actor1, actor2)
         cloneData.updateClonedataLocation(actor2, actor1)
+        commonUtil.copyStats(actor1,actor2)
+        commonUtil.copyStats(actor2,actor1)
+        return { actor1 = actor1, actor2 = actor2 }
     else
         local actor1pos = actor1.position:copy()
         local actor1cell = actor1.cell.name
@@ -132,7 +137,7 @@ function cloneData.transferPlayerData(actor1, actor2, doTP)
             local equipped = actor1.object:hasItemEquipped(objectId)
             if equipped then
                 actor2EquipSaved[objectId] = true
-                actor1.mobile:unequip({ item =  objectId, playSound = false })
+                actor1.mobile:unequip({ item = objectId, playSound = false })
             end
             tes3.transferItem({
                 from                = actor1.mobile,
@@ -148,7 +153,7 @@ function cloneData.transferPlayerData(actor1, actor2, doTP)
             local equipped = actor2.object:hasItemEquipped(objectId)
             if equipped then
                 actor1EquipSaved[objectId] = true
-                actor2.mobile:unequip({ item =  objectId, playSound = false })
+                actor2.mobile:unequip({ item = objectId, playSound = false })
             end
             tes3.transferItem({
                 from                = actor2.mobile,
@@ -169,14 +174,14 @@ function cloneData.transferPlayerData(actor1, actor2, doTP)
                     local objectId = item.object.id
                     if actor1EquipSaved[objectId] then
                         actor1Saved.mobile:equip({ item = objectId, playSound = false })
-                        print("Equipped ".. objectId)
+                        print("Equipped " .. objectId)
                     end
                 end
                 for index, item in ipairs(actor2Saved.mobile.inventory) do
                     local objectId = item.object.id
                     if actor2EquipSaved[objectId] then
                         actor2Saved.mobile:equip({ item = objectId, playSound = false })
-                        print("Equipped ".. objectId)
+                        print("Equipped " .. objectId)
                     end
                 end
                 local tp2 = tes3.positionCell({
@@ -186,7 +191,7 @@ function cloneData.transferPlayerData(actor1, actor2, doTP)
                     orientation = actor2DestRot,
                     teleportCompanions = false
                 })
-    
+
                 tes3.fadeIn({ duration = 1 })
             end
 
@@ -242,22 +247,43 @@ function commonUtil.getLocationData(obj)
         }
     end
 end
-function commonUtil.copyStats(actorSource,actorTarget)
-if omw then
-    for key, val in pairs(actorSource.type.stats.attributes) do 
-        actorTarget:sendEvent("CA_SetStat",{stat = "attributes",key = key, base = val(actorSource).base, damage = val(actorSource).damage,  modifier = val(actorSource).modifier})
-        
-    end
-    for key, val in pairs(actorSource.type.stats.dynamic) do 
-        actorTarget:sendEvent("CA_SetStat",{stat = "dynamic",key = key, base = val(actorSource).base, damage = val(actorSource).damage,  modifier = val(actorSource).modifier})
-    
-    end
-    for key, val in pairs(actorSource.type.stats.skills) do 
-        actorTarget:sendEvent("CA_SetStat",{stat = "skills",key = key, base = val(actorSource).base, damage = val(actorSource).damage,  modifier = val(actorSource).modifier})
-    
+
+function commonUtil.copyStats(actorSource, actorTarget)
+    if omw then
+        for key, val in pairs(actorSource.type.stats.attributes) do
+            print(key)
+            actorTarget:sendEvent("CA_SetStat",
+                {
+                    stat = "attributes",
+                    key = key,
+                    base = val(actorSource).base,
+                    damage = val(actorSource).damage,
+                    modifier = val(actorSource).modifier
+                })
+        end
+        for key, val in pairs(actorSource.type.stats.dynamic) do
+            actorTarget:sendEvent("CA_SetStat",
+                {
+                    stat = "dynamic",
+                    key = key,
+                    base = val(actorSource).base,
+                    modifier = val(actorSource).modifier,
+                    current =  val(actorSource).current,
+                })
+        end
+        for key, val in pairs(actorSource.type.stats.skills) do
+            actorTarget:sendEvent("CA_SetStat",
+                {
+                    stat = "skills",
+                    key = key,
+                    base = val(actorSource).base,
+                    damage = val(actorSource).damage,
+                    modifier = val(actorSource).modifier
+                })
+        end
     end
 end
-end
+
 function commonUtil.createPlayerClone(cell, position, rotation)
     local newActor
     if omw then
@@ -278,7 +304,7 @@ function commonUtil.createPlayerClone(cell, position, rotation)
             orientation = rotation
         })
     end
-    commonUtil.copyStats(getPlayer(),newActor)
+    commonUtil.copyStats(getPlayer(), newActor)
     return newActor
 end
 
@@ -321,8 +347,46 @@ function commonUtil.getReferenceById(id, locationData)
     end
 end
 
+local function rezPlayer()
+    local scr = world.mwscript.getGlobalScript("ZHAC_PlayerRez", world.players[1])
+    scr.variables.doRez = 1
+end
+
 function cloneData.getCloneData()
     return dataManager.getValueOrTable("CloneData")
+end
+
+local nextDest
+local function movePlayerToNewBody()
+    local player = world.players[1]
+    local currentID = cloneData.getCloneDataForNPC(player).id
+    --  cloneData.removeCloneFromData(currentID)
+    local destCLone = cloneData.getCloneObject(cloneData.getRealPlayerCloneID())
+    local data = cloneData.transferPlayerData(world.players[1], destCLone)
+    --destCLone.enabled = false
+    player:setScale(1)
+    player:sendEvent("RegainControl")
+end
+local function playerRespawn()
+
+end
+function cloneData.handleCloneDeath()
+    local player = world.players[1]
+    rezPlayer()
+    player:setScale(0.001)
+    --local deadAvatar = commonUtil.createPlayerClone(player.cell, player.position, player.rotation)
+    local currentID = cloneData.getCloneDataForNPC(player).id
+    --  cloneData.removeCloneFromData(currentID)
+    local destCLone = cloneData.getCloneObject(cloneData.getRealPlayerCloneID())
+    local data = cloneData.transferPlayerData(world.players[1], destCLone)
+    --destCLone.enabled = false
+    player:setScale(1)
+    player:sendEvent("RegainControl")
+    actorSwap.doActorSwap(player, destCLone, false)
+    destCLone:sendEvent("CA_setHealth", 0)
+
+    --player:teleport(player.cell, util.vector3(player.position.x, player.position.y, player.position.z + 1000))
+    async:newUnsavableSimulationTimer(5, movePlayerToNewBody)
 end
 
 function cloneData.setCloneData(data)
@@ -337,6 +401,15 @@ function cloneData.getCloneDataForNPC(actor)
         end
     end
     return nil
+end
+
+function cloneData.getRealPlayerCloneID()
+    local cdata = cloneData.getCloneData()
+    for index, value in pairs(cdata) do
+        if value.cloneType == "RealPlayer" then
+            return value.id
+        end
+    end
 end
 
 function cloneData.setCloneDataForNPCID(cloneID, newID, type)
@@ -407,6 +480,17 @@ function cloneData.addCloneToWorld(cell, position, rotation, cloneType)
     local newClone = commonUtil.createPlayerClone(cell, position, rotation)
     local data = cloneData.markActorAsClone(newClone, cloneType)
     return { cloneData = data.cloneData, createdCloneId = data.createdCloneId, newClone = newClone }
+end
+
+function cloneData.removeCloneFromData(id)
+    local cdata = cloneData.getCloneData()
+    for index, value in pairs(cdata) do
+        if value.id == id then
+            table.remove(cdata, index)
+            cloneData.setCloneData(cdata)
+            return
+        end
+    end
 end
 
 function commonUtil.getCellName(actor)

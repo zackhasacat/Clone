@@ -12,7 +12,7 @@ local function doActorSwap(data)
     actorSwap.doActorSwap(data.actor1, data.actor2)
 end
 local function createPlayerAvatar(player)
-    local playerRecord = types.NPC.record(player)
+    local playerRecord = types.NPC.record(player.recordId)
     local rec = {
         name = playerRecord.name,
         template = types.NPC.record("ZHAC_AvatarBase"),
@@ -23,14 +23,10 @@ local function createPlayerAvatar(player)
         race = playerRecord.race
     }
     local ret = types.NPC.createRecordDraft(rec)
-    local record = world.overrideRecord(ret)
+    local record = world.overrideRecord(ret,ret.id)
     local newActor = world.createObject(record.id)
     newActor:teleport(player.cell, player.position)
     return newActor
-end
-local function rezPlayer()
-    local scr = world.mwscript.getGlobalScript("ZHAC_PlayerRez", world.players[1])
-    scr.variables.doRez = 1
 end
 local respawnCell = "Caldera, Guild of Mages"
 local respawnPos = util.vector3(521.4033203125, 882.4403076171875, 401)
@@ -41,14 +37,7 @@ local function movePlayerToNewBody()
     player:sendEvent("RegainControl")
 end
 local function playerRespawn()
-    local player = world.players[1]
-    rezPlayer()
-    player:setScale(0.001)
-    local deadAvatar = createPlayerAvatar(player)
-    actorSwap.doActorSwap(player, deadAvatar, false)
-    deadAvatar:sendEvent("CA_setHealth", 0)
-    player:teleport(player.cell, util.vector3(player.position.x, player.position.y, player.position.z + 1000))
-    async:newUnsavableSimulationTimer(5, movePlayerToNewBody)
+    cloneData.handleCloneDeath()
 end
 local activatedActor
 local function activateNPC(object, actor)
