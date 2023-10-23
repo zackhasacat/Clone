@@ -13,7 +13,7 @@ if SkillsModule then
         maxLevel = -1,
         -- icon = "Icons/HuntingMod/hunting.dds"
     }
-    return
+
 end
 
 local function keyDown(e)
