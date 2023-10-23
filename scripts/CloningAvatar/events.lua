@@ -14,7 +14,9 @@ function events.onActivate(object, actor)
     if recId == "zhac_button_1" then --real body
         commonUtil.setObjectState("zhac_forcefield2", true)
         commonUtil.setObjectState("zhac_forcefield1", false)
-        cloneData.transferPlayerData(commonUtil.getPlayer(), commonUtil.getReferenceById("zhac_avatarbase"), true)
+      --  cloneData.transferPlayerData(commonUtil.getPlayer(), commonUtil.getReferenceById("player"), true)
+      cloneData.savePlayerData()
+      commonUtil.openCloneMenu(true)
     elseif recId == "zhac_button_2" then
         local newClone = cloneData.addCloneToWorld("gnisis, arvs-drelen", { x = 3977, y = 3286, z = 256 })
         --  cloneData.transferPlayerData(commonUtil.getPlayer(),newClone.newClone,false)

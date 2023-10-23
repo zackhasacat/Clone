@@ -11,6 +11,7 @@ if omw then
     pathPrefix = "scripts.CloningAvatar"
     actorSwap = require(pathPrefix .. '.ActorSwap')
 end
+local config = require(pathPrefix..".config")
 local dataManager = require(pathPrefix .. ".common.dataManager")
 local cloneData   = {}
 local commonUtil  = {
@@ -51,15 +52,20 @@ function commonUtil.removeActiveEffects(actorRef)
         end
     end
 end
-
 function cloneData.playerIsInClone()
     local data = cloneData.getCloneDataForNPC(getPlayer())
     if not data then return false end
     if data.cloneType == "RealPlayer" then return false end
     return true
 end
-
-function cloneData.transferPlayerData(actor1, actor2, doTP)
+function cloneData.savePlayerData()
+    local actor1CD = cloneData.getCloneDataForNPC(getPlayer())
+    if not actor1CD  then
+        print("Saved player data")
+        cloneData.markActorAsClone(getPlayer(), "RealPlayer")
+    end
+end
+function cloneData.transferPlayerData(actor1, actor2, doTP,kill2)
     actor1Saved = actor1 --player
     actor2Saved = actor2
     actor1EquipSaved = {}
@@ -83,8 +89,8 @@ function cloneData.transferPlayerData(actor1, actor2, doTP)
     elseif not actor2CD then
         error("Missing data for actor2")
     end
-    commonUtil.transferStats(actor1, actor2)
     if omw then --Logic for OpenMW
+        commonUtil.transferStats(actor1, actor2)
         local actor1Inv = {}
         local actor2Inv = {}
         local actor1Equip = types.Actor.getEquipment(actor1)
@@ -126,7 +132,6 @@ function cloneData.transferPlayerData(actor1, actor2, doTP)
         cloneData.updateClonedataLocation(actor2, actor1)
         return { actor1 = actor1, actor2 = actor2 }
     else --Logic for MWSE
-        commonUtil.copyStats(actor2, actor1)
         local actor1pos     = tes3vector3.new(actor1.position.x, actor1.position.y, actor1.position.z)
         local actor1cell    = actor1.cell.name
         local actor1rot     = actor1.orientation:copy()
@@ -190,6 +195,8 @@ function cloneData.transferPlayerData(actor1, actor2, doTP)
                 error("Actor2 not TP")
             end
             local function onTimerComplete()
+                commonUtil.transferSpells(actor1, actor2)
+                commonUtil.transferStats(actor1, actor2)
                 for index, item in ipairs(actor1Saved.mobile.inventory) do
                     local objectId = item.object.id
                     if actor1EquipSaved[objectId] then
@@ -214,7 +221,9 @@ function cloneData.transferPlayerData(actor1, actor2, doTP)
                 })
                 --actor1.position = actor2pos
                 print("TP2: " .. tostring(tp2))
-
+                if kill2 then
+                    actor2.mobile.health.current = 0
+                end
                 tes3.fadeIn({ duration = 0.1 })
             end
 
@@ -228,22 +237,22 @@ function cloneData.getCloneRecord()
         local playerRecord = types.NPC.record(getPlayer())
         local rec = {
             name = playerRecord.name,
-            template = types.NPC.record("ZHAC_AvatarBase"),
+            template = types.NPC.record(config.cloneRecordId),
             isMale = playerRecord.isMale,
             head = playerRecord.head,
             hair = playerRecord.hair,
             class = playerRecord.class,
             race = playerRecord.race
         }
-        if types.NPC.createRecordDraft and true == false then
+        if types.NPC.createRecordDraft then
             local ret = types.NPC.createRecordDraft(rec)
             local record = world.overrideRecord(ret, ret.id)
             return record
         else
-            return types.NPC.record("player")
+            return types.NPC.record(config.cloneRecordId)
         end
     else
-        local cloneRecord = tes3.getObject("ZHAC_AvatarBase")
+        local cloneRecord = tes3.getObject(config.cloneRecordId)
         local playerRecord = tes3.getObject("player")
         cloneRecord.hair = playerRecord.hair
         cloneRecord.race = playerRecord.race
@@ -270,66 +279,86 @@ function commonUtil.getLocationData(obj)
     end
 end
 
+function commonUtil.transferSpells(actor1, actor2)
+    if omw then
+
+    else
+        local mob1 = actor1.mobile
+        local mob2 = actor2.mobile
+        local actor1Spells = {}
+        local actor2Spells = {}
+        for index, value in pairs(tes3.getSpells({ target = mob1, getActorSpells = false, getRaceSpells = false, getBirthsignSpells = false })) do
+            table.insert(actor1Spells, value.id)
+            tes3.removeSpell({ reference = mob1, spell = value.id })
+        end
+        for index, value in pairs(tes3.getSpells({ target = mob2, getActorSpells = false, getRaceSpells = false, getBirthsignSpells = false })) do
+            table.insert(actor2Spells, value.id)
+            tes3.removeSpell({ reference = mob2, spell = value.id })
+        end
+
+        for index, value in pairs(tes3.getSpells({ target = mob1, getActorSpells = true, getRaceSpells = false, getBirthsignSpells = false,spellType = tes3.spellType["ability"]})) do
+            table.insert(actor1Spells, value.id)
+            tes3.removeSpell({ reference = mob1, spell = value.id })
+        end
+        for index, value in pairs(tes3.getSpells({ target = mob2, getActorSpells = true, getRaceSpells = false, getBirthsignSpells = false ,spellType = tes3.spellType["ability"]})) do
+            table.insert(actor2Spells, value.id)
+            tes3.removeSpell({ reference = mob2, spell = value.id })
+        end
+
+        for index, value in pairs(tes3.getSpells({ target = mob1, getActorSpells = true, getRaceSpells = false, getBirthsignSpells = false,spellType = tes3.spellType["curse"]})) do
+            table.insert(actor1Spells, value.id)
+            tes3.removeSpell({ reference = mob1, spell = value.id })
+        end
+        for index, value in pairs(tes3.getSpells({ target = mob2, getActorSpells = true, getRaceSpells = false, getBirthsignSpells = false ,spellType = tes3.spellType["curse"]})) do
+            table.insert(actor2Spells, value.id)
+            tes3.removeSpell({ reference = mob2, spell = value.id })
+        end
+        for index, value in ipairs(actor1Spells) do
+            tes3.addSpell({reference = mob2,spell = value})
+        end
+        for index, value in ipairs(actor2Spells) do
+            tes3.addSpell({reference = mob1,spell = value})
+        end
+    end
+end
+
 function commonUtil.transferStats(actor1, actor2) --transfer current stat info between two actors, do not touch base(of actor 1 at least)
     if omw then
 
     else
-        local a1m = actor1.mobile
-        local a2m = actor2.mobile
-        local actor1stats = {}
-        local actor2stats = {}
-        for index, value in pairs(a1m.attributes) do
-            local aval
-            for index1, avalue in pairs(tes3.attribute) do
-                if index == avalue + 1 then
-                    aval = index1
-                end
-            end
-            actor1stats[aval] = { current = value.current + 0, base = value.base }
-        end
-        for index, value in pairs(a1m.skills) do
-            local aval
-            for index1, avalue in pairs(tes3.skill) do
-                if index == avalue + 1 then
-                    aval = index1
-                end
-            end
-            actor1stats[aval] = { current = value.current, base = value.base }
+        local mob1 = actor1.mobile
+        local mob2 = actor2.mobile
+        local properties = { "health", "fatigue", "magicka" }
+
+        -- health/magicka/fatigue
+        for _, name in pairs(properties) do
+            --mob1[name].base, mob2[name].base = mob2[name].base, mob1[name].base
+            mob1[name].current, mob2[name].current = mob2[name].current, mob1[name].current
+
+            tes3.setStatistic({ reference = mob1, name = name, current = mob1[name].current })
+            tes3.setStatistic({ reference = mob2, name = name, current = mob2[name].current })
         end
 
-        for index, value in pairs(a2m.attributes) do
-            local aval
-            for index1, avalue in pairs(tes3.attribute) do
-                if index == avalue + 1 then
-                    aval = index1
-                end
-            end
-            actor2stats[aval] = { current = value.current, base = value.base }
-        end
-        for index, value in pairs(a2m.skills) do
-            local aval
-            for index1, avalue in pairs(tes3.skill) do
-                if index == avalue + 1 then
-                    aval = index1
-                end
-            end
-            actor2stats[aval] = { current = value.current, base = value.base }
-        end
-        actor2stats["health"] = { current = a2m.health.current, base = a2m.health.base }
-        actor2stats.fatigue = { current = a2m.fatigue.current, base = a2m.fatigue.base }
-        actor2stats.magicka = { current = a2m.magicka.current, base = a2m.magicka.base }
+        -- attributes
+        for name in pairs(tes3.attribute) do
+            --mob1[name].base, mob2[name].base = mob2[name].base, mob1[name].base
+            mob1[name].current, mob2[name].current = mob2[name].current, mob1[name].current
 
-        actor1stats["health"]  = { current = a1m.health.current }
-        actor1stats.fatigue = { current = a1m.fatigue.current }
-        actor1stats.magicka = { current = a1m.magicka.current, base = a1m.magicka.base }
-        for index, value in pairs(actor2stats) do
-            print(index)
-            tes3.setStatistic({ reference = a1m, name = index, current = value.current })
+            tes3.setStatistic({ reference = mob1, name = name, current = mob1[name].current })
+            tes3.setStatistic({ reference = mob2, name = name, current = mob2[name].current })
         end
-        for index, value in pairs(actor1stats) do
-            print(index)
-            tes3.setStatistic({ reference = a2m, name = index, current = value.current })
+
+        -- skills
+        for name in pairs(tes3.skill) do
+            --mob1[name].base, mob2[name].base = mob2[name].base, mob1[name].base
+            mob1[name].current, mob2[name].current = mob2[name].current, mob1[name].current
+
+            tes3.setStatistic({ reference = mob1, name = name, current = mob1[name].current })
+            tes3.setStatistic({ reference = mob2, name = name, current = mob2[name].current })
         end
+
+        mob1:updateDerivedStatistics()
+        mob2:updateDerivedStatistics()
     end
 end
 
@@ -408,6 +437,7 @@ function commonUtil.createPlayerClone(cell, position, rotation)
         end
         newActor = world.createObject(cloneData.getCloneRecord().id)
         newActor:teleport(cell, position, rotation)
+        newActor:addScript("scripts/CloningAvatar/omw/cloneScript.lua")
     else
         if not rotation then
             rotation = tes3vector3.new(0, 0, 0)
@@ -429,12 +459,12 @@ function commonUtil.getReferenceById(id, locationData)
         if id == getPlayer().id then
             return getPlayer()
         end
-        if not locationData then
-            for index, value in ipairs(world.activeActors) do
-                if value.id == id then
-                    return value
-                end
+        for index, value in ipairs(world.activeActors) do
+            if value.id == id then
+                return value
             end
+        end
+        if not locationData then
         else
             local cell
             if locationData.exterior == true then
@@ -444,6 +474,11 @@ function commonUtil.getReferenceById(id, locationData)
                 cell = world.getCellByName(locationData.cell)
             end
             for index, value in ipairs(cell:getAll(types.NPC)) do
+                if value.id == id then
+                    return value
+                end
+            end
+            for index, value in ipairs(cell:getAll()) do
                 if value.id == id then
                     return value
                 end
@@ -501,7 +536,7 @@ function cloneData.handleCloneDeath()
     local currentID = cloneData.getCloneDataForNPC(player).id
     --  cloneData.removeCloneFromData(currentID)
     local destCLone = cloneData.getCloneObject(cloneData.getRealPlayerCloneID())
-    local data = cloneData.transferPlayerData(player, destCLone)
+    local data = cloneData.transferPlayerData(player, destCLone,true,true)
     --destCLone.enabled = false
     -- player:setScale(1)
     if omw then
@@ -510,7 +545,7 @@ function cloneData.handleCloneDeath()
         actorSwap.doActorSwap(player, destCLone, false)
         --async:newUnsavableSimulationTimer(5, cloneData.movePlayerToNewBody)
     end
-    commonUtil.setActorHealth(destCLone, 0)
+    --commonUtil.setActorHealth(destCLone, 0)
 
     --player:teleport(player.cell, util.vector3(player.position.x, player.position.y, player.position.z + 1000))
 end

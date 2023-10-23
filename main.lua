@@ -1,6 +1,18 @@
 local events = require("VerticalityGangProject.scripts.CloningAvatar.events")
 local commonUtil = require("VerticalityGangProject.scripts.CloningAvatar.common.commonUtil")
 local command = include("JosephMcKean.commands.interop")
+local SkillsModule = include("SkillsModule")
+if not SkillsModule then return end
+
+local skill = SkillsModule.registerSkill{
+    id = "cloning",
+    name = "Cloning",
+    description = "The cloning skill determines how well you can create and use clones.",
+    specialization = tes3.specialization["magic"],
+    value = 0,
+    maxLevel = -1,
+   -- icon = "Icons/HuntingMod/hunting.dds"
+}
 local function keyDown(e)
     for key, value in pairs(tes3.scanCode) do
         if value == e.keyCode then
@@ -22,6 +34,7 @@ end
 event.register(tes3.event.soundObjectPlay, soundObjectPlayCallback)
 local function onDamage(e)
     if e.reference.id == tes3.player.id then
+        if commonUtil.playerIsInClone() then
         if e.mobile.health.current - math.abs(e.damage) <= 1 then
             commonUtil.showMessage("Killed")
             e.damage = 0
@@ -29,6 +42,7 @@ local function onDamage(e)
             events.onPlayerDeath()
             return false
         end
+    end
     end
 end
 event.register(tes3.event["keyDown"], keyDown)

@@ -11,9 +11,6 @@ local pathPrefix    = "VerticalityGangProject.scripts.CloningAvatar"
 if omw then
     pathPrefix = "scripts.CloningAvatar"
 end
-if not omw then
-    cloneMenu = include(pathPrefix .. ".mwse.cloneMenu")
-end
 local cloneData  = require(pathPrefix .. ".common.cloneData")
 --cutil = require("VerticalityGangProject.scripts.CloningAvatar.common.commonUtil")
 local commonUtil = {}
@@ -34,6 +31,23 @@ else
     return tes3.menuMode()
 end
 end
+function commonUtil.playerIsInClone()
+return cloneData.playerIsInClone()
+end
+if not omw then
+    cloneMenu = include(pathPrefix .. ".mwse.cloneMenu")
+end
+function commonUtil.openCloneMenu(force)
+    local canOpen = cloneData.playerIsInClone()
+    if not canOpen and not force then
+        return
+    end
+    if omw then
+        core.sendGlobalEvent("openClonePlayerMenu")
+    else
+        cloneMenu.createWindow()
+    end
+end
 function commonUtil.resurrectPlayer()
     commonUtil.setActorHealth(tes3.player.mobile, 100)
     if not omw then
@@ -49,7 +63,7 @@ function commonUtil.getReferenceById(id, locationData)
         end
         if not locationData then
             for index, value in ipairs(world.activeActors) do
-                if value.id == id or value.recordId == id:lower() then
+                if value.id == id or value.recordId == id:lower() and value ~= commonUtil.getPlayer() then
                     return value
                 end
             end
@@ -63,7 +77,7 @@ function commonUtil.getReferenceById(id, locationData)
                 cell = world.getCellByName(locationData.cell)
             end
             for index, value in ipairs(cell:getAll()) do
-                if value.id == id or value.recordId == id:lower() then
+                if value.id == id or value.recordId == id:lower() and value ~= commonUtil.getPlayer() then
                     return value
                 end
             end
@@ -141,17 +155,7 @@ function commonUtil.teleportActor(actor, cellName, pos)
     end
 end
 
-function commonUtil.openCloneMenu()
-    local canOpen = cloneData.playerIsInClone()
-    if not canOpen then
-        return
-    end
-    if omw then
-        core.sendGlobalEvent("openClonePlayerMenu")
-    else
-        cloneMenu.createWindow()
-    end
-end
+
 
 function commonUtil.showMessage(msg)
     if omw then
