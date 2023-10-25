@@ -694,6 +694,7 @@ function cloneData.getMenuData()
         end
         newData.info["loc"] = "Current Location: " .. commonUtil.getCellName(actor)
         newData.info["health"] = "Health: " .. tostring(commonUtil.getActorHealth(actor))
+        newData.info["isAlive"] = commonUtil.getActorHealth(actor) > 0
         newData.realId = commonUtil.getActorId(actor)
         table.insert(menuData, newData)
     end

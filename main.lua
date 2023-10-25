@@ -1,21 +1,8 @@
 local events = require("VerticalityGangProject.scripts.CloningAvatar.events")
 local commonUtil = require("VerticalityGangProject.scripts.CloningAvatar.common.commonUtil")
 local command = include("JosephMcKean.commands.interop")
-local SkillsModule = include("SkillsModule")
-local skill
-if SkillsModule then
-    skill = SkillsModule.registerSkill {
-        id = "cloning",
-        name = "Cloning",
-        description = "The cloning skill determines how well you can create and use clones.",
-        specialization = tes3.specialization["magic"],
-        value = 0,
-        maxLevel = -1,
-        -- icon = "Icons/HuntingMod/hunting.dds"
-    }
 
-end
-
+local skill = require("VerticalityGangProject.scripts.CloningAvatar.common.skill")
 local function keyDown(e)
     for key, value in pairs(tes3.scanCode) do
         if value == e.keyCode then

@@ -58,36 +58,38 @@ function this.createWindow()
     local activeCloneData
     playerCloneData = cloneData.getCloneDataForNPC(tes3.player)
     for _, value in ipairs(paneItems) do
-        local text = value.name
-        if value.id == playerCloneData.id then
-            text = value.name .. " (controlled)"
-        end
-        local createdPane = scrollPane:createTextSelect({ text = text, id = value.id })
-        if playerCloneData and value.id == playerCloneData.id then
-            createdPane.widget.state = tes3.uiState.active
-            activeCloneData = value
-        end
-        createdPane:register("mouseClick", function(e)
-            local id = e.widget.id
-            if id == playerCloneData.id then
-                button_block:findChild(this.id_ok).disabled = true
-                button_block:findChild(this.id_ok).visible = false
-            else
-                button_block:findChild(this.id_ok).disabled = false
-                button_block:findChild(this.id_ok).visible = true
+        if value.info.isAlive == true then
+            local text = value.name
+            if value.id == playerCloneData.id then
+                text = value.name .. " (controlled)"
             end
-            selectedId = id
-            for _, child in ipairs(e.source.parent.children) do
-                child.widget.state = tes3.uiState.normal
+            local createdPane = scrollPane:createTextSelect({ text = text, id = value.id })
+            if playerCloneData and value.id == playerCloneData.id then
+                createdPane.widget.state = tes3.uiState.active
+                activeCloneData = value
             end
-            for index, value in ipairs(clonePaneData) do
-                if value.id == id then
-                    rightBlock:findChild("health").text = value.info.health
-                    rightBlock:findChild("location").text = value.info.loc
+            createdPane:register("mouseClick", function(e)
+                local id = e.widget.id
+                if id == playerCloneData.id then
+                    button_block:findChild(this.id_ok).disabled = true
+                    button_block:findChild(this.id_ok).visible = false
+                else
+                    button_block:findChild(this.id_ok).disabled = false
+                    button_block:findChild(this.id_ok).visible = true
                 end
-            end
-            e.source.widget.state = tes3.uiState.active
-        end)
+                selectedId = id
+                for _, child in ipairs(e.source.parent.children) do
+                    child.widget.state = tes3.uiState.normal
+                end
+                for index, value in ipairs(clonePaneData) do
+                    if value.id == id then
+                        rightBlock:findChild("health").text = value.info.health
+                        rightBlock:findChild("location").text = value.info.loc
+                    end
+                end
+                e.source.widget.state = tes3.uiState.active
+            end)
+        end
     end
 
     -- Create labels on the right
