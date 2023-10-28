@@ -24,16 +24,73 @@ function commonUtil.getPlayer()
         return tes3.getReference("player")
     end
 end
+
+function commonUtil.getValueForRef(ref, valueId)
+    if not omw then
+        return ref.data[valueId]
+    end
+end
+
+function commonUtil.setValueForRef(ref, valueId, value)
+    if not omw then
+        ref.modified = true
+        ref.data[valueId] = value
+    end
+end
+function commonUtil.setPosition(ref,position)
+if not omw then
+ref.position = position
+end
+
+end
+function commonUtil.getPosition(x,y,z)
+
+if not omw then
+return tes3vector3.new(x,y,z)
+end
+end
+
+function commonUtil.getObjectsInCell(cellOrCellname)
+    if (not omw) then
+        local cell = cellOrCellname
+        if (cell.id == nil) then cell = ZackBridge.getCell(cell) end
+        local refs = {}
+        for ref in cell:iterateReferences() do
+            table.insert(refs, ref)
+        end
+        return refs
+    end
+    local cell = cellOrCellname
+    if (cell.name == nil) then
+        cell = world.getCellByName(cell)
+    else
+        cell = cellOrCellname
+    end
+    return cell:getAll()
+end
+
+function commonUtil.getReferenceModId(ref)
+    if omw then
+        if not ref.contentFile then return nil end
+        return ref.contentFile:lower()
+    else
+        if not ref.sourceMod then return nil end
+        return ref.sourceMod:lower()
+    end
+end
+
 function commonUtil.menuMode()
-if omw then
-    return core.isWorldPaused()
-else
-    return tes3.menuMode()
+    if omw then
+        return core.isWorldPaused()
+    else
+        return tes3.menuMode()
+    end
 end
-end
+
 function commonUtil.playerIsInClone()
-return cloneData.playerIsInClone()
+    return cloneData.playerIsInClone()
 end
+
 if not omw then
     cloneMenu = include(pathPrefix .. ".mwse.cloneMenu")
 end
@@ -48,10 +105,11 @@ function commonUtil.openCloneMenu(force)
         cloneMenu.createWindow()
     end
 end
+
 function commonUtil.resurrectPlayer()
     commonUtil.setActorHealth(tes3.player.mobile, 100)
     if not omw then
-    tes3.player.mobile:resurrect({ resetState = false, })
+        tes3.player.mobile:resurrect({ resetState = false, })
     end
     commonUtil.showMessage("Rezurrect time")
 end
@@ -108,7 +166,7 @@ function commonUtil.getRefRecordId(obj)
     if omw then
         return obj.recordId:lower()
     else
-        return obj.baseObject.id
+        return obj.baseObject.id:lower()
     end
 end
 
@@ -139,6 +197,14 @@ function commonUtil.setObjectState(id, state)
     end
 end
 
+function commonUtil.setReferenceState(obj, state)
+    if omw then
+        obj.enabled = state
+    else
+        tes3.setEnabled({ reference = obj, enabled = state })
+    end
+end
+
 function commonUtil.setActorHealth(actor, health)
     if omw then
         actor:sendEvent("CA_setHealth", health)
@@ -155,8 +221,6 @@ function commonUtil.teleportActor(actor, cellName, pos)
     end
 end
 
-
-
 function commonUtil.showMessage(msg)
     if omw then
         world.players[1]:sendEvent("showMessage", msg)
@@ -164,6 +228,7 @@ function commonUtil.showMessage(msg)
         tes3ui.showNotifyMenu(msg)
     end
 end
+
 function commonUtil.writeToConsole(msg)
     if omw then
         world.players[1]:sendEvent("writeToConsole", msg)
@@ -171,13 +236,13 @@ function commonUtil.writeToConsole(msg)
         tes3ui.log(msg)
     end
 end
-function commonUtil.closeMenu()
-if omw then
 
-    world.players[1]:sendEvent("closeMenuWindow_Clone")
-else
-    tes3ui.leaveMenuMode()
-end
+function commonUtil.closeMenu()
+    if omw then
+        world.players[1]:sendEvent("closeMenuWindow_Clone")
+    else
+        tes3ui.leaveMenuMode()
+    end
 end
 
 return commonUtil

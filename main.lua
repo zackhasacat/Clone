@@ -1,8 +1,9 @@
 local events = require("VerticalityGangProject.scripts.CloningAvatar.events")
 local commonUtil = require("VerticalityGangProject.scripts.CloningAvatar.common.commonUtil")
 local command = include("JosephMcKean.commands.interop")
-
+local cloneRoomManager = require("VerticalityGangProject.scripts.CloningAvatar.CloneRoomManager")
 local skill = require("VerticalityGangProject.scripts.CloningAvatar.common.skill")
+local dataManager = require("VerticalityGangProject.scripts.CloningAvatar.common.dataManager")
 local function keyDown(e)
     for key, value in pairs(tes3.scanCode) do
         if value == e.keyCode then
@@ -21,6 +22,26 @@ end
 local function soundObjectPlayCallback(e)
     --  return false
 end
+local function cellChangedCallback(e)
+
+    if e.cell.name == "Gnisis, Arvs-Drelen" then
+        local val = dataManager.getValue("ZHAC_CloneRoomState",-1)
+        if val == -1 then
+            dataManager.setValue("ZHAC_CloneRoomState",1)
+            cloneRoomManager.initRoom(e.cell)
+            cloneRoomManager.setObjStates(1,e.cell)
+        elseif val > -1 then
+            cloneRoomManager.setObjStates(val,e.cell)
+        end
+    end
+    
+end
+
+local function journalCallback(e)
+    events.onQuestUpdate(e.topic.id,e.index )
+end
+event.register(tes3.event.journal, journalCallback)
+event.register(tes3.event.cellChanged, cellChangedCallback)
 event.register(tes3.event.soundObjectPlay, soundObjectPlayCallback)
 local function onDamage(e)
     if e.reference.id == tes3.player.id then
