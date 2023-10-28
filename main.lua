@@ -24,16 +24,7 @@ local function soundObjectPlayCallback(e)
 end
 local function cellChangedCallback(e)
 
-    if e.cell.name == "Gnisis, Arvs-Drelen" then
-        local val = dataManager.getValue("ZHAC_CloneRoomState",-1)
-        if val == -1 then
-            dataManager.setValue("ZHAC_CloneRoomState",1)
-            cloneRoomManager.initRoom(e.cell)
-            cloneRoomManager.setObjStates(1,e.cell)
-        elseif val > -1 then
-            cloneRoomManager.setObjStates(val,e.cell)
-        end
-    end
+  events.cellChanged(e.cell)
     
 end
 

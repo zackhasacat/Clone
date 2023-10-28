@@ -1,5 +1,6 @@
 local pathPrefix = "VerticalityGangProject.scripts.CloningAvatar"
 local omw, core  = pcall(require, "openmw.core")
+local _, async  = pcall(require, "openmw.async")
 if omw then
     pathPrefix = "scripts.CloningAvatar"
 end
@@ -57,6 +58,12 @@ function cloneRoomManager.initRoom(cell)
                 commonUtil.setValueForRef(obj, "ZHAC_objectLevel", val)
             end
         end
+    end
+    if omw then
+        async:newUnsavableGameTimer(1, function()
+            cloneRoomManager.setObjStates(1,cell)
+         end
+       )
     end
 end
 return cloneRoomManager

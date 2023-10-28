@@ -24,6 +24,22 @@ function events.onActivate(object, actor)
     end
 end
 
+function events.cellChanged(newCell)
+    if newCell.name == "Gnisis, Arvs-Drelen" then
+        local val = dataManager.getValue("ZHAC_CloneRoomState", -1)
+        if val == -1 then
+            print("cell init")
+            dataManager.setValue("ZHAC_CloneRoomState", 1)
+            cloneRoomManager.initRoom(newCell)
+            if not omw then
+                cloneRoomManager.setObjStates(1, newCell)
+            end
+        elseif val > -1 then
+            cloneRoomManager.setObjStates(val, newCell)
+        end
+    end
+end
+
 function events.onInit()
     local gameStarted = dataManager.getValue("gameStarted", false)
     if not gameStarted then
@@ -35,13 +51,11 @@ end
 function events.onQuestUpdate(id, stage)
     if id:lower() == "tdm_clone_mq" then
         if stage == 50 then
-            dataManager.setValue("ZHAC_CloneRoomState",2)
+            dataManager.setValue("ZHAC_CloneRoomState", 2)
         elseif stage == 60 then
-            
-            dataManager.setValue("ZHAC_CloneRoomState",3)
+            dataManager.setValue("ZHAC_CloneRoomState", 3)
         elseif stage == 70 then
-            
-            dataManager.setValue("ZHAC_CloneRoomState",4)
+            dataManager.setValue("ZHAC_CloneRoomState", 4)
         end
     end
 end
@@ -62,7 +76,8 @@ end
 
 function events.onConsoleCommand(command)
     if command == "luaclonetp" or command == "clonetp" then
-        commonUtil.teleportActor(commonUtil.getPlayer(), "gnisis, arvs-drelen", { x = 3870, y = 3857, z = 256 })
+        commonUtil.teleportActor(commonUtil.getPlayer(), "gnisis, arvs-drelen", { x = 4096, y = 5888, z = 128 })
+        cloneRoomManager.setObjStates(4, commonUtil.getPlayer().cell)
         commonUtil.writeToConsole("Teleported to Gnisis")
         commonUtil.closeMenu()
     end

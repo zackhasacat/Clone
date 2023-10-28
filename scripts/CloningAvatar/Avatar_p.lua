@@ -20,6 +20,7 @@ local function setCollisionState(state)
         debug.toggleCollision()
     end
 end
+local  lastCell
 local function onUpdate(dt)
     if self.type.stats.dynamic.health(self).current <= 1 then
         self.type.stats.dynamic.health(self).current = 100
@@ -29,10 +30,20 @@ local function onUpdate(dt)
         rezPlayer()
         deadCamera = true
     end
+    if self.cell.name ~= lastCell then
+        
+        lastCell = self.cell.name
+        core.sendGlobalEvent("CellChanged",self.cell.name)
+    end
     if deadCamera == true and camera.getMode() == camera.MODE.ThirdPerson then
         camera.setMode(camera.MODE.Static)
         deadCamera = false
     end
+end
+local function onQuestUpdate(quid,stage)
+    print(quid)
+    core.sendGlobalEvent("Clone_QU",{questId = quid,stage = stage})
+
 end
 local function RegainControl()
     camera.setMode(camera.MODE.FirstPerson)
@@ -98,7 +109,8 @@ return {
         onConsoleCommand = onConsoleCommand,
         onKeyPress = onKeyPress,
         onSave = onSave,
-        onLoad = onLoad
+        onLoad = onLoad,
+        onQuestUpdate = onQuestUpdate,
     },
     eventHandlers  = {
         CA_setEquipment = CA_setEquipment,

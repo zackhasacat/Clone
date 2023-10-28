@@ -12,6 +12,7 @@ if omw then
     pathPrefix = "scripts.CloningAvatar"
 end
 local cloneData  = require(pathPrefix .. ".common.cloneData")
+local dataManager = require(pathPrefix.. ".common.dataManager")
 --cutil = require("VerticalityGangProject.scripts.CloningAvatar.common.commonUtil")
 local commonUtil = {}
 function commonUtil.getPlayer()
@@ -28,6 +29,8 @@ end
 function commonUtil.getValueForRef(ref, valueId)
     if not omw then
         return ref.data[valueId]
+    else
+        return dataManager.getValue(ref.id .. valueId)
     end
 end
 
@@ -35,11 +38,15 @@ function commonUtil.setValueForRef(ref, valueId, value)
     if not omw then
         ref.modified = true
         ref.data[valueId] = value
+    else
+        return dataManager.setValue(ref.id .. valueId,value)
     end
 end
 function commonUtil.setPosition(ref,position)
 if not omw then
 ref.position = position
+else
+    ref:teleport(ref.cell,position)
 end
 
 end
@@ -47,6 +54,8 @@ function commonUtil.getPosition(x,y,z)
 
 if not omw then
 return tes3vector3.new(x,y,z)
+else
+    return util.vector3(x,y,z)
 end
 end
 
@@ -198,9 +207,9 @@ function commonUtil.setObjectState(id, state)
 end
 
 function commonUtil.setReferenceState(obj, state)
-    if omw then
+    if omw and obj.count > 0 then
         obj.enabled = state
-    else
+    elseif not omw then
         tes3.setEnabled({ reference = obj, enabled = state })
     end
 end
