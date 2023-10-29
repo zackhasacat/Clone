@@ -141,16 +141,15 @@ end
 local function mouseClick(mouseEvent, data)
     local id = data.props.id
     if id == "Create Clone" then
+        local check1, check2, check3 = commonUtil.getPlayerItemCount("ingred_6th_corp"),
+            commonUtil.getPlayerItemCount("ingred_daedras_heart_01"),
+            commonUtil.getPlayerItemCount("ingred_frost_salts_01")
+        if check1 > 0 and check2 > 0 and check3 > 0 then
 
-
-    local check1, check2, check3 = commonUtil.getPlayerItemCount("ingred_6th_corp"), commonUtil.getPlayerItemCount("ingred_daedras_heart_01"),
-    commonUtil.getPlayerItemCount("ingred_frost_salts_01")
-    if check1 > 0 and check2 > 0 and check3 > 0 then
-        
-    else
-       ui.showMessage("Required Items are Missing")
-        return
-    end
+        else
+            ui.showMessage("Required Items are Missing")
+            return
+        end
         core.sendGlobalEvent("CC_CreateClone", buttonId)
         I.UI.setMode(nil)
         winCreated:destroy()
@@ -282,7 +281,6 @@ function selMenu.showMessageBox(ncloneData, textLines, buttons)
         menuOptions = {}
     end
     if ncloneData then
-
         buttonId = ncloneData.id
         cloneData = ncloneData.data
     end
@@ -296,8 +294,7 @@ function selMenu.showMessageBox(ncloneData, textLines, buttons)
     end
     if ncloneData then
         addMenuOption(1, "Current Occupant:" .. occupantName, false)
-    end
-    if not cloneData or #cloneData == 0 then
+    elseif not cloneData or #cloneData == 0 then
         addMenuOption(1, "Current Occupant:" .. occupantName, false)
     end
     if ncloneData then
@@ -316,9 +313,9 @@ function selMenu.showMessageBox(ncloneData, textLines, buttons)
             tostring(commonUtil.getPlayerItemCount("ingred_daedras_heart_01"))
         local line3 = "Available Frost Salt: " ..
             tostring(commonUtil.getPlayerItemCount("ingred_frost_salts_01"))
-            addMenuOption(2,line1, false)
-            addMenuOption(3,line2, false)
-            addMenuOption(4,line3, false)
+        addMenuOption(2, line1, false)
+        addMenuOption(3, line2, false)
+        addMenuOption(4, line3, false)
     end
     if winCreated then
         winCreated:destroy()
