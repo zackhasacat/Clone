@@ -42,7 +42,7 @@ end
 local activatedActor
 local function activateNPC(object, actor)
     --print(object.recordId)
-    if object.recordId == "zhac_avatarbase" then
+    if object.recordId:lower() == cloneData.getCloneRecordId():lower() then
         --actorSwap.doActorSwap(actor, object)
         --return false
         activatedActor = object
@@ -78,6 +78,22 @@ end
 cloneData.transferPlayerData(world.players[1],destCLone)
 
 end
+local function openCloneManageMenu(id)
+
+    world.players[1]:sendEvent("openCloneManageMenu",{data = cloneData.getCloneData(), id = id})
+
+end
+local function CC_CreateClone(buttonId)
+    if buttonId == "tdm_controlpanel_left" then
+        local newClone = cloneData.addCloneToWorld("gnisis, arvs-drelen", { x = 4637, y = 6015, z = 146 })
+
+        cloneData.setClonePodName(newClone.createdCloneId, buttonId)
+    elseif buttonId == "tdm_controlpanel_right" then
+        local newClone = cloneData.addCloneToWorld("gnisis, arvs-drelen", { x = 4637, y = 5766, z = 146 })
+        print(newClone.createdCloneId)
+        cloneData.setClonePodName(newClone.createdCloneId, buttonId)
+    end
+end
 local function openClonePlayerMenu()
 world.players[1]:sendEvent("openClonePlayerMenu",cloneData.getMenuData())
 end
@@ -100,5 +116,7 @@ return {
         updateClonedataLocation = updateClonedataLocation,
         SwitchToClone= SwitchToClone,
         openClonePlayerMenu = openClonePlayerMenu,
+        openCloneManageMenu = openCloneManageMenu,
+        CC_CreateClone = CC_CreateClone,
     }
 }

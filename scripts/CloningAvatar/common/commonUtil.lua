@@ -119,7 +119,7 @@ end
 
 function commonUtil.openManageCloneMenu(id)
     if omw then
-        --  core.sendGlobalEvent("openClonePlayerMenu")
+          core.sendGlobalEvent("openCloneManageMenu",id)
     else
         cloneManageMenu.createWindow(id)
     end

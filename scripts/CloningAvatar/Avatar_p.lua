@@ -6,7 +6,8 @@ local camera = require('openmw.camera')
 local debug = require('openmw.debug')
 local ui = require('openmw.ui')
 local deadCamera = false
-local AvatarSelect = require("scripts.CloningAvatar.AvatarSelectionMenu")
+local AvatarSelect = require("scripts.CloningAvatar.omw.AvatarSelectionMenu")
+local AvatarManage = require("scripts.CloningAvatar.omw.AvatarManageMenu")
 
 local playerCurrentCloneType = "RealPlayer"
 local function CA_setEquipment(equip)
@@ -54,6 +55,9 @@ local function closeMenuWindow_Clone()
 end
 local function openClonePlayerMenu(data)
     AvatarSelect.showMessageBox(data)
+end
+local function openCloneManageMenu(data)
+    AvatarManage.showMessageBox(data)
 end
 local function onConsoleCommand(mode, command)
     core.sendGlobalEvent("onConsoleCommand", command)
@@ -117,6 +121,7 @@ return {
         RegainControl = RegainControl,
         closeMenuWindow_Clone = closeMenuWindow_Clone,
         openClonePlayerMenu = openClonePlayerMenu,
+        openCloneManageMenu = openCloneManageMenu,
         showMessage = showMessage,
         writeToConsole = writeToConsole,
         CA_SetStat = CA_SetStat,

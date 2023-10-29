@@ -3,6 +3,7 @@ local util = require("openmw.util")
 local async = require("openmw.async")
 local core = require("openmw.core")
 local I = require("openmw.interfaces")
+local nearby = require("openmw.nearby")
 local storage = require("openmw.storage")
 local self = require("openmw.self")
 local cloneData
@@ -10,9 +11,57 @@ local cloneData
 local playerSettings = storage.playerSection("MessageBoxData")
 local winCreated
 local selMenu = {}
+local cloneDataFunc = {}
+
+local podRealId
+function cloneDataFunc.clearCloneIDForPod(pod)
+    local cdata = cloneData
+    for index, value in pairs(cdata) do
+        if cdata[index].occupiedPod == pod then
+            cdata[index].occupiedPod = nil
+        end
+    end
+end
+
+function cloneDataFunc.setClonePodName(cloneId, pod)
+    cloneData.clearCloneIDForPod(pod)
+    local cdata = cloneData
+    for index, value in pairs(cdata) do
+        if value.id == cloneId then
+            cdata[index].occupiedPod = pod
+        end
+    end
+end
+
+function cloneDataFunc.getCloneIDForPod(pod)
+    local cdata = cloneData
+    for index, value in pairs(cdata) do
+        if cdata[index].occupiedPod == pod then
+            return index
+        end
+    end
+end
+
+function cloneDataFunc.getCloneNameForPod(pod)
+    local cdata = cloneData
+    for index, value in pairs(cdata) do
+        print(index)
+        if cdata[index].occupiedPod then
+            print(cdata[index].occupiedPod)
+        else
+            print(cdata[index].occupiedPod)
+            print(pod)
+        end
+        if cdata[index].occupiedPod == pod then
+            podRealId = cdata[index].currentId
+            return value.name
+        end
+    end
+end
 
 local winName
 local textSize = 20
+local buttonId
 local menuOptions
 local function addMenuOption(id, text, selected)
     local val = { id = id, text = text, selected = selected or false, highlighted = false }
@@ -70,20 +119,34 @@ local function boxedContainer(element)
         props = {
             -- size = util.vector2(400, 400),
         },
-        content =ui.content{element}
+        content = ui.content { element }
     }
 end
 local function mouseClick(mouseEvent, data)
     local id = data.props.id
+    if id == "Create Clone" then
+        core.sendGlobalEvent("CC_CreateClone", buttonId)
+        I.UI.setMode(nil)
+        winCreated:destroy()
+        menuOptions = {}
+        return
+    elseif id == "Open Occupant Inventory" then
+        local targetActor
+        for index, value in ipairs(nearby.actors) do
+            if value.id == podRealId then
+                targetActor = value
+            end
+        end
+        I.UI.setMode(nil)
+        winCreated:destroy()
+        menuOptions = {}
+        if targetActor then
+            I.UI.setMode(I.UI.MODE.Companion, { target = targetActor })
+        end
+        return
+    end
     for key, value in ipairs(menuOptions) do
         if value.id == id then
-            if menuOptions[key].selected == true then
-                core.sendGlobalEvent("SwitchToClone", id)
-                ui.showMessage("Clicked again" .. id)
-                I.UI.setMode(nil)
-                winCreated:destroy()
-                return
-            end
             menuOptions[key].selected = true
             print("Selected " .. id)
         else
@@ -115,9 +178,22 @@ local function mouseMove(mouseEvent, data)
 end
 local function renderListItem(id)
     local data = menuOptions[id]
-    local text = data.text
+    local mid
+    local text
+    local selected = true
+    local highlighted = false
+    if not data then
+        data = id
+        text = id
+        mid = id
+    else
+        mid = data.id
+        text = data.text
+        highlighted = data.highlighted
+        selected = data.selected
+    end
     local texttemplate = I.MWUI.templates.textHeader
-    if not data.highlighted then
+    if not highlighted then
         texttemplate = I.MWUI.templates.textNormal
     end
     local resources = ui.content {
@@ -126,7 +202,7 @@ local function renderListItem(id)
             template = texttemplate,
             props = {
                 text = text,
-                id = menuOptions[id].id,
+                id = mid,
                 textSize = textSize,
                 arrange = ui.ALIGNMENT.End,
                 align = ui.ALIGNMENT.Center,
@@ -137,16 +213,16 @@ local function renderListItem(id)
     local itemIcon = nil
     local rowCountX = 1
     local template = I.MWUI.templates.boxTransparent
-    if not data.selected then
+    if not selected then
         template = I.MWUI.templates.padding
     end
     return {
         type = ui.TYPE.Container,
         props = {
             autoSize = false,
-            selected = data.selected,
+            selected = selected,
             text = text,
-            id = menuOptions[id].id,
+            id = mid,
             -- size = util.vector2(400, 400),
         },
         events = {
@@ -167,7 +243,7 @@ local function renderListItem(id)
                     anchor = util.vector2(0, -0.5),
                     --  size = util.vector2(400, 400),
                     autoSize = false,
-                    id = menuOptions[id].id,
+                    id = mid,
                 },
                 content = resources
             },
@@ -177,8 +253,32 @@ end
 local staticList = { "Health: 100", "Name: Yes" }
 function selMenu.showMessageBox(ncloneData, textLines, buttons)
     if ncloneData then
-        cloneData = ncloneData
-        menuOptions = nil
+        buttonId = ncloneData.id
+        cloneData = ncloneData.data
+        async:newUnsavableGameTimer(0.8, function()
+            if winCreated then
+            I.UI.setMode(nil)
+            winCreated:destroy()
+            menuOptions = {}
+            end
+            return
+        end)
+    end
+    local occupantName
+    occupantName = cloneDataFunc.getCloneNameForPod(buttonId)
+    if not occupantName then
+        occupantName = "None"
+        buttons = { "Create Clone" }
+    else
+        buttons = { "Open Occupant Inventory" }
+    end
+    if ncloneData then
+        menuOptions = {}
+        addMenuOption(1, "Current Occupant:" .. occupantName, false)
+    end
+    if not cloneData or #cloneData == 0 then
+        menuOptions = {}
+        addMenuOption(1, "Current Occupant:" .. occupantName, false)
     end
     if winCreated then
         winCreated:destroy()
@@ -187,19 +287,17 @@ function selMenu.showMessageBox(ncloneData, textLines, buttons)
         buttons = { "OK" }
     end
     local contents = {}
+    local buttonContent = {}
     local contents2 = {}
     local table_contents = {}  -- Table to hold the generated items
     local table_contents2 = {} -- Table to hold the generated items
+    local table_contentsb = {} -- Table to hold the generated items
     local selectedMenuOption
     if not menuOptions then
         menuOptions = {}
         for index, value in ipairs(cloneData) do
             local selected = false
-            if value.realId == self.id then
-                selected = true
-                selectedMenuOption = value.id
-            end
-            local mopt = addMenuOption(value.id, value.name, selected)
+            local mopt = addMenuOption(value, value, selected)
             local content = {} -- Create a new table for each value of x
 
             table.insert(content, renderListItem(mopt.id))
@@ -209,23 +307,27 @@ function selMenu.showMessageBox(ncloneData, textLines, buttons)
         for key, value in ipairs(menuOptions) do
             local mopt = value
             local content = {} -- Create a new table for each value of x
-            if value.selected then
-                selectedMenuOption = value.id
-            end
+
             table.insert(content, renderListItem(mopt.id))
             table.insert(contents, content)
         end
     end
+    for key, value in ipairs(buttons) do
+        local mopt = value
+        local content = {} -- Create a new table for each value of x
+
+        table.insert(content, renderListItem(value))
+        table.insert(buttonContent, content)
+    end
     if (#contents == 0) then
-        error("No content items")
+        -- error("No content items")
     end
     for index, value in ipairs(cloneData) do
         if value.id == selectedMenuOption then
             for key, valuex in pairs(value.info) do
-
                 local mopt = valuex
                 local content = {} -- Create a new table for each value of x
-        
+
                 table.insert(content, textContent(valuex))
                 table.insert(contents2, content)
             end
@@ -262,6 +364,20 @@ function selMenu.showMessageBox(ncloneData, textLines, buttons)
         table.insert(table_contents2, item)
     end
 
+    for index, contentx in ipairs(buttonContent) do --Print the actual text lines
+        local item = {
+            type = ui.TYPE.Flex,
+            content = ui.content(contentx),
+            props = {
+                horizontal = true,
+                arrange = ui.ALIGNMENT.Center,
+                align = ui.ALIGNMENT.Center,
+                autoSize = true
+            }
+        }
+        table.insert(table_contents2, item)
+    end
+
 
     local itemK = { --This includes the top text, and the botton buttons.
         type = ui.TYPE.Flex,
@@ -275,8 +391,20 @@ function selMenu.showMessageBox(ncloneData, textLines, buttons)
             autoSize = true
         },
     }
-    itemK = boxedContainer(itemK)
     local itemB = { --This includes the top text, and the botton buttons.
+        type = ui.TYPE.Flex,
+        content = ui.content(table_contentsb),
+        props = {
+            -- size = util.vector2(450, 300),
+            horizontal = false,
+            vertical = true,
+            arrange = ui.ALIGNMENT.Center,
+            align = ui.ALIGNMENT.Center,
+            autoSize = true
+        },
+    }
+    itemK = itemK
+    local itemBB = { --This includes the top text, and the botton buttons.
         type = ui.TYPE.Flex,
         content = ui.content(table_contents2),
         props = {
@@ -311,9 +439,20 @@ function selMenu.showMessageBox(ncloneData, textLines, buttons)
             autoSize = true
         },
     }
+    local horizontalMenu2 = { --This includes the top text, and the botton buttons.
+        type = ui.TYPE.Flex,
+        content = ui.content({ itemBB }),
+        props = {
+            --  size = util.vector2(450, 300),
+            horizontal = true,
+            arrange = ui.ALIGNMENT.Start,
+            align = ui.ALIGNMENT.Start,
+            autoSize = true
+        },
+    }
     local verticalMenu = { --This includes the top text, and the botton buttons.
         type = ui.TYPE.Flex,
-        content = ui.content({ headerMenu, horizontalMenu }),
+        content = ui.content({ headerMenu, horizontalMenu, horizontalMenu2 }),
         props = {
             --  size = util.vector2(450, 300),
             horizontal = false,
@@ -323,7 +462,19 @@ function selMenu.showMessageBox(ncloneData, textLines, buttons)
             autoSize = true
         },
     }
+    local bottomButtons = { --This includes the top text, and the botton buttons.
+        type = ui.TYPE.Flex,
+        content = ui.content({ itemB }),
+        props = {
+            --  size = util.vector2(450, 300),
+            horizontal = true,
+            arrange = ui.ALIGNMENT.Start,
+            align = ui.ALIGNMENT.Start,
+            autoSize = true
+        },
+    }
     I.UI.setMode('Interface', { windows = {} })
+    print("paused`")
     local xui = ui.create { --This is the window itself.
         layer = "Windows",
         template = I.MWUI.templates.boxTransparent,

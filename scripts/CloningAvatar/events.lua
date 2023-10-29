@@ -52,7 +52,7 @@ function events.onActivate(object, actor)
         else
             commonUtil.showMessage("Door still open, cannot enter ")
         end
-    elseif recId == "zhac_avatarbase" and commonUtil.getQuestStage("TDM_Clone_SQ1") < 30 then
+    elseif recId == cloneData.getCloneRecordId() and commonUtil.getQuestStage("TDM_Clone_SQ1") < 30 then
         return false
     elseif recId == "tdm_switch1" then
         local var = commonUtil.getScriptVariables("tdm_clone_glass1", "TDM_Glass_Script1","RotatingItem")
@@ -129,7 +129,7 @@ function events.onKeyPress(keyChar)
         if commonUtil.menuMode() then
             return
         end
-        commonUtil.showMessage("K Pressed")
+        --commonUtil.showMessage("K Pressed")
         commonUtil.openCloneMenu()
     end
 end

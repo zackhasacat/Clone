@@ -11,7 +11,7 @@ if omw then
     pathPrefix = "scripts.CloningAvatar"
     actorSwap = require(pathPrefix .. '.ActorSwap')
 end
-local config = require(pathPrefix..".config")
+local config      = require(pathPrefix .. ".config")
 local dataManager = require(pathPrefix .. ".common.dataManager")
 local cloneData   = {}
 local commonUtil  = {
@@ -41,13 +41,13 @@ local actor2DestCell
 local actor2DestPos
 local actor2DestRot
 function commonUtil.makeActorWait(actorRef)
-if omw then
-    actorRef:sendEvent("StartAIPackage",{type = "Wander",distance = 0})
-else
-    tes3.setAIWander({reference = actorRef,idles = {}})
+    if omw then
+        actorRef:sendEvent("StartAIPackage", { type = "Wander", distance = 0 })
+    else
+        tes3.setAIWander({ reference = actorRef, idles = {} })
+    end
 end
 
-end
 function commonUtil.removeActiveEffects(actorRef)
     if omw then
 
@@ -60,20 +60,23 @@ function commonUtil.removeActiveEffects(actorRef)
         end
     end
 end
+
 function cloneData.playerIsInClone()
     local data = cloneData.getCloneDataForNPC(getPlayer())
     if not data then return false end
     if data.cloneType == "RealPlayer" then return false end
     return true
 end
+
 function cloneData.savePlayerData()
     local actor1CD = cloneData.getCloneDataForNPC(getPlayer())
-    if not actor1CD  then
+    if not actor1CD then
         print("Saved player data")
         return cloneData.markActorAsClone(getPlayer(), "RealPlayer")
     end
 end
-function cloneData.transferPlayerData(actor1, actor2, doTP,kill2)
+
+function cloneData.transferPlayerData(actor1, actor2, doTP, kill2)
     actor1Saved = actor1 --player
     actor2Saved = actor2
     actor1EquipSaved = {}
@@ -222,12 +225,12 @@ function cloneData.transferPlayerData(actor1, actor2, doTP,kill2)
                 end
                 print(actor2DestPos)
                 local tp2 = tes3.positionCell({
-                    reference       = actor1,
-                    position        = actor2DestPos,
-                    cell            = actor2cell,
-                    orientation     = actor2rot,
-                    forceCellChange = true,
-                    teleportCompanions  = false,
+                    reference          = actor1,
+                    position           = actor2DestPos,
+                    cell               = actor2cell,
+                    orientation        = actor2rot,
+                    forceCellChange    = true,
+                    teleportCompanions = false,
                 })
                 --actor1.position = actor2pos
                 print("TP2: " .. tostring(tp2))
@@ -242,12 +245,37 @@ function cloneData.transferPlayerData(actor1, actor2, doTP,kill2)
     end
 end
 
+function cloneData.getCloneRecordId()
+    if not omw then
+        return config.cloneRecordId
+    else
+        if types.NPC.createRecordDraft then
+            return config.cloneRecordId
+        else
+            local playerRecord = types.NPC.record(getPlayer())
+            local mOrF = "f"
+            local playerRace = playerRecord.race
+            if playerRecord.isMale then
+                mOrF = "m"
+            end
+            local cloneRecord = "ZHAC_AvatarBase_" .. string.sub(playerRace, 0, 2) .. "_" .. mOrF
+            print(cloneRecord)
+            local recordCheck = types.NPC.record(cloneRecord)
+            if recordCheck then
+                return cloneRecord
+            else
+                return config.cloneRecordId
+            end
+        end
+    end
+end
+
 function cloneData.getCloneRecord()
     if omw then
         local playerRecord = types.NPC.record(getPlayer())
         local rec = {
             name = playerRecord.name,
-            template = types.NPC.record(config.cloneRecordId),
+            template = types.NPC.record(cloneData.getCloneRecordId()),
             isMale = playerRecord.isMale,
             head = playerRecord.head,
             hair = playerRecord.hair,
@@ -259,10 +287,10 @@ function cloneData.getCloneRecord()
             local record = world.overrideRecord(ret, ret.id)
             return record
         else
-            return types.NPC.record(config.cloneRecordId)
+            return types.NPC.record(cloneData.getCloneRecordId())
         end
     else
-        local cloneRecord = tes3.getObject(config.cloneRecordId)
+        local cloneRecord = tes3.getObject(cloneData.getCloneRecordId())
         local playerRecord = tes3.getObject("player")
         cloneRecord.hair = playerRecord.hair
         cloneRecord.race = playerRecord.race
@@ -306,28 +334,32 @@ function commonUtil.transferSpells(actor1, actor2)
             tes3.removeSpell({ reference = mob2, spell = value.id })
         end
 
-        for index, value in pairs(tes3.getSpells({ target = mob1, getActorSpells = true, getRaceSpells = false, getBirthsignSpells = false,spellType = tes3.spellType["ability"]})) do
+        for index, value in pairs(tes3.getSpells({ target = mob1, getActorSpells = true, getRaceSpells = false, getBirthsignSpells = false, spellType =
+        tes3.spellType["ability"] })) do
             table.insert(actor1Spells, value.id)
             tes3.removeSpell({ reference = mob1, spell = value.id })
         end
-        for index, value in pairs(tes3.getSpells({ target = mob2, getActorSpells = true, getRaceSpells = false, getBirthsignSpells = false ,spellType = tes3.spellType["ability"]})) do
+        for index, value in pairs(tes3.getSpells({ target = mob2, getActorSpells = true, getRaceSpells = false, getBirthsignSpells = false, spellType =
+        tes3.spellType["ability"] })) do
             table.insert(actor2Spells, value.id)
             tes3.removeSpell({ reference = mob2, spell = value.id })
         end
 
-        for index, value in pairs(tes3.getSpells({ target = mob1, getActorSpells = true, getRaceSpells = false, getBirthsignSpells = false,spellType = tes3.spellType["curse"]})) do
+        for index, value in pairs(tes3.getSpells({ target = mob1, getActorSpells = true, getRaceSpells = false, getBirthsignSpells = false, spellType =
+        tes3.spellType["curse"] })) do
             table.insert(actor1Spells, value.id)
             tes3.removeSpell({ reference = mob1, spell = value.id })
         end
-        for index, value in pairs(tes3.getSpells({ target = mob2, getActorSpells = true, getRaceSpells = false, getBirthsignSpells = false ,spellType = tes3.spellType["curse"]})) do
+        for index, value in pairs(tes3.getSpells({ target = mob2, getActorSpells = true, getRaceSpells = false, getBirthsignSpells = false, spellType =
+        tes3.spellType["curse"] })) do
             table.insert(actor2Spells, value.id)
             tes3.removeSpell({ reference = mob2, spell = value.id })
         end
         for index, value in ipairs(actor1Spells) do
-            tes3.addSpell({reference = mob2,spell = value})
+            tes3.addSpell({ reference = mob2, spell = value })
         end
         for index, value in ipairs(actor2Spells) do
-            tes3.addSpell({reference = mob1,spell = value})
+            tes3.addSpell({ reference = mob1, spell = value })
         end
     end
 end
@@ -535,7 +567,6 @@ function cloneData.movePlayerToNewBody()
     end
 end
 
-
 local function playerRespawn()
 
 end
@@ -547,7 +578,7 @@ function cloneData.handleCloneDeath()
     local currentID = cloneData.getCloneDataForNPC(player).id
     --  cloneData.removeCloneFromData(currentID)
     local destCLone = cloneData.getCloneObject(cloneData.getRealPlayerCloneID())
-    local data = cloneData.transferPlayerData(player, destCLone,true,true)
+    local data = cloneData.transferPlayerData(player, destCLone, true, true)
     --destCLone.enabled = false
     -- player:setScale(1)
     if omw then
@@ -575,6 +606,7 @@ function cloneData.getCloneDataForNPC(actor)
     print("Found no clone data for " .. actor.id)
     return nil
 end
+
 function cloneData.getCloneDataForID(id)
     for index, value in pairs(cloneData.getCloneData()) do
         if value.id == id then
@@ -584,7 +616,6 @@ function cloneData.getCloneDataForID(id)
     print("Found no clone data for " .. id)
     return nil
 end
-
 
 function cloneData.getRealPlayerCloneID()
     local cdata = cloneData.getCloneData()
@@ -664,27 +695,29 @@ function cloneData.addCloneToWorld(cell, position, rotation, cloneType)
     local data = cloneData.markActorAsClone(newClone, cloneType)
     return { cloneData = data.cloneData, createdCloneId = data.createdCloneId, newClone = newClone }
 end
+
 function cloneData.clearCloneIDForPod(pod)
     local cdata = cloneData.getCloneData()
     for index, value in pairs(cdata) do
         if cdata[index].occupiedPod == pod then
-           cdata[index].occupiedPod = nil
+            cdata[index].occupiedPod = nil
         end
     end
     cloneData.setCloneData(cdata)
-
 end
 
-function cloneData.setClonePodName(cloneId,pod)
+function cloneData.setClonePodName(cloneId, pod)
     cloneData.clearCloneIDForPod(pod)
     local cdata = cloneData.getCloneData()
     for index, value in pairs(cdata) do
         if value.id == cloneId then
             cdata[index].occupiedPod = pod
+            
         end
     end
     cloneData.setCloneData(cdata)
 end
+
 function cloneData.getCloneIDForPod(pod)
     local cdata = cloneData.getCloneData()
     for index, value in pairs(cdata) do
@@ -692,7 +725,6 @@ function cloneData.getCloneIDForPod(pod)
             return index
         end
     end
-
 end
 
 function cloneData.removeCloneFromData(id)
