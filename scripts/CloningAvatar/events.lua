@@ -17,11 +17,28 @@ function events.onActivate(object, actor)
         cloneData.savePlayerData()
         commonUtil.openCloneMenu(true)
     elseif recId == "tdm_controlpanel_left" then
+        local var = commonUtil.getScriptVariables("tdm_clone_glass1", "TDM_Glass_Script1","RotatingItem")
+
+        if var == 0  then
+            commonUtil.openManageCloneMenu(recId)
+            --tes3.getScript("TDM_Glass_Script1"):getVariableData()
+           -- commonUtil.showMessage("Valid State")
+        else
+            commonUtil.showMessage("Door still open, cannot manage.")
+        end
         --local newClone = cloneData.addCloneToWorld("gnisis, arvs-drelen", { x = 3977, y = 3286, z = 256 })
-        commonUtil.openManageCloneMenu(recId)
+       
     elseif recId == "tdm_controlpanel_right" then
         --local newClone = cloneData.addCloneToWorld("gnisis, arvs-drelen", { x = 3977, y = 3286, z = 256 })
-        commonUtil.openManageCloneMenu(recId)
+        local var = commonUtil.getScriptVariables("tdm_clone_glass2", "TDM_Glass_Script2","RotatingItem")
+
+        if var == 0  then
+            commonUtil.openManageCloneMenu(recId)
+            --tes3.getScript("TDM_Glass_Script1"):getVariableData()
+           -- commonUtil.showMessage("Valid State")
+        else
+            commonUtil.showMessage("Door still open, cannot manage.")
+        end
     elseif recId == "tdm_switch2" then
         local var = commonUtil.getScriptVariables("tdm_clone_glass2", "TDM_Glass_Script2","RotatingItem")
         local var2 = commonUtil.getScriptVariables("TDM_Switch2", "TDM_Switcher2","turning")

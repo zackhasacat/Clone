@@ -71,6 +71,7 @@ function this.createWindow(bid)
     local menu = tes3ui.createMenu { id = this.id_menu, fixedFrame = true }
     menu.alpha = 1.0
     menu.width = 400
+    local occupied = false
 
     -- Create label for the select menu
     local inputLabel = menu:createLabel { text = "Clone Pod Management" }
@@ -80,6 +81,7 @@ function this.createWindow(bid)
     local currentID = cloneData.getCloneIDForPod(buttonId)
     if currentID then
         occupantName = cloneData.getCloneDataForID(currentID).name
+        occupied = true
     end
     local infoLabel = menu:createLabel { text = "Current Occupant: " .. occupantName }
     local spacerLabel = menu:createLabel { text = "" }
@@ -133,7 +135,12 @@ function this.createWindow(bid)
 
     local button_cancel = button_block:createButton { id = this.id_cancel, text = tes3.findGMST("sCancel").value }
     --  local button_ok = button_block:createButton { id = this.id_ok, text = "Control Selected" }
-    local button_createClone = button_block:createButton { id = this.id_createClone, text = "Create Clone" }
+
+    local createText = "Create Clone"
+    if occupied then
+        createText = "Open Occupant Inventory"
+    end
+    local button_createClone = button_block:createButton { id = this.id_createClone, text = createText }
 
 
     button_cancel:register(tes3.uiEvent.mouseClick, this.onCancel)
@@ -163,8 +170,12 @@ local function fixScale()
 end
 function this.onCloneCreate()
     local menu = tes3ui.findMenu(this.id_menu)
-    if cloneData.getCloneIDForPod(buttonId) then
-        tes3ui.showNotifyMenu("Pod already occupied")
+    if cloneData.getCloneIDForPod(buttonId) and menu then
+        --tes3ui.showNotifyMenu("Pod already occupied")
+        menu:destroy()
+        tes3ui.leaveMenuMode()
+        local actor = cloneData.getCloneObject(cloneData.getCloneIDForPod(buttonId))
+        tes3.showContentsMenu({reference = actor})
         return
     end
 

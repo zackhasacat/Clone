@@ -218,6 +218,7 @@ function cloneData.transferPlayerData(actor1, actor2, doTP,kill2)
                     cell            = actor2cell,
                     orientation     = actor2rot,
                     forceCellChange = true,
+                    teleportCompanions  = false,
                 })
                 --actor1.position = actor2pos
                 print("TP2: " .. tostring(tp2))
