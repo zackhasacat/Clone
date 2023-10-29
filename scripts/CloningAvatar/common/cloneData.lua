@@ -40,6 +40,14 @@ local actor2EquipSaved = {}
 local actor2DestCell
 local actor2DestPos
 local actor2DestRot
+function commonUtil.makeActorWait(actorRef)
+if omw then
+    actorRef:sendEvent("StartAIPackage",{type = "Wander",distance = 0})
+else
+    tes3.setAIWander({reference = actorRef,idles = {}})
+end
+
+end
 function commonUtil.removeActiveEffects(actorRef)
     if omw then
 
@@ -70,6 +78,7 @@ function cloneData.transferPlayerData(actor1, actor2, doTP,kill2)
     actor2Saved = actor2
     actor1EquipSaved = {}
     actor2EquipSaved = {}
+    commonUtil.makeActorWait(actor2)
     local actor1id = commonUtil.getActorId(actor1)
     local actor2id = commonUtil.getActorId(actor2)
     local actor1CD = cloneData.getCloneDataForNPC(actor1)
