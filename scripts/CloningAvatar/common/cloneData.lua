@@ -525,6 +525,7 @@ function cloneData.movePlayerToNewBody()
     end
 end
 
+
 local function playerRespawn()
 
 end

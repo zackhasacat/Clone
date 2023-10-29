@@ -22,39 +22,40 @@ function this.init()
     this.id_cancel = tes3ui.registerID("zhac_clone:MenuTextInput_Cancel")
     this.id_createClone = tes3ui.registerID("zhac_clone:MenuTextid_createClone")
 end
+
 local function getPlayerItemCount(itemId)
     local count = 0
 
 
-        local player = tes3.player
-        local inventory = player.object.inventory
+    local player = tes3.player
+    local inventory = player.object.inventory
 
-        for _, stack in pairs(inventory) do
-            if string.find(stack.object.id, itemId) then
-                count = count + stack.count
-            end
+    for _, stack in pairs(inventory) do
+        if string.find(stack.object.id, itemId) then
+            count = count + stack.count
         end
+    end
 
 
     return count
 end
-local function removePlayerItemCount(itemId,fcount)
+local function removePlayerItemCount(itemId, fcount)
     local count = 0
     if not fcount then
         fcount = 1
     end
 
-        local player = tes3.player
-        local inventory = player.object.inventory
+    local player = tes3.player
+    local inventory = player.object.inventory
 
-        for _, stack in pairs(inventory) do
-            if string.find(stack.object.id, itemId) and stack.count > fcount then
-                tes3.removeItem({reference = player,item = stack.object.id,count = fcount})
-                count = count + stack.count
-                --stack.count = stack.count - fcount
-                return fcount
-            end
+    for _, stack in pairs(inventory) do
+        if string.find(stack.object.id, itemId) and stack.count > fcount then
+            tes3.removeItem({ reference = player, item = stack.object.id, count = fcount })
+            count = count + stack.count
+            --stack.count = stack.count - fcount
+            return fcount
         end
+    end
 
 
     return count
@@ -109,9 +110,12 @@ function this.createWindow(bid)
     local label2
     local label3
 
-    label3 = rightBlock:createLabel { text = "Available Corupus Meat: " ..tostring(getPlayerItemCount("ingred_6th_corp")) }
-    label2 = rightBlock:createLabel { text = "Available Daedra Heart: "..tostring(getPlayerItemCount("ingred_daedras_heart_01")) }
-    label1 = rightBlock:createLabel { text = "Available Frost Salt: "..tostring(getPlayerItemCount("ingred_frost_salts_01")) }
+    label3 = rightBlock:createLabel { text = "Available Corupus Meat: " ..
+    tostring(getPlayerItemCount("ingred_6th_corp")) }
+    label2 = rightBlock:createLabel { text = "Available Daedra Heart: " ..
+    tostring(getPlayerItemCount("ingred_daedras_heart_01")) }
+    label1 = rightBlock:createLabel { text = "Available Frost Salt: " ..
+    tostring(getPlayerItemCount("ingred_frost_salts_01")) }
     --scrollPane.width = 300
     -- scrollPane.autoHeight = true
     -- scrollPane.childAlignX = 0.5
@@ -143,6 +147,20 @@ function this.createWindow(bid)
     tes3ui.enterMenuMode(this.id_menu)
 end
 
+local myClone
+local function fixScale()
+    if myClone.scale < 1 then
+        myClone.scale = myClone.scale + 0.01
+        if myClone.scale < 1 then
+            timer.start({
+                duration = 0.01,   -- Duration of the timer in seconds
+                callback = fixScale, -- Function to be called when the timer expires
+                type = timer.simulate, -- Timer type (timer.simulate or timer.real)
+                iterations = 1     -- Number of times the timer should repeat (optional, default is 1)
+            })
+        end
+    end
+end
 function this.onCloneCreate()
     local menu = tes3ui.findMenu(this.id_menu)
     if cloneData.getCloneIDForPod(buttonId) then
@@ -150,22 +168,38 @@ function this.onCloneCreate()
         return
     end
 
-    local check1, check2, check3 = getPlayerItemCount("ingred_6th_corp"), getPlayerItemCount("ingred_daedras_heart_01"), getPlayerItemCount("ingred_frost_salts_01")
+    local check1, check2, check3 = getPlayerItemCount("ingred_6th_corp"), getPlayerItemCount("ingred_daedras_heart_01"),
+        getPlayerItemCount("ingred_frost_salts_01")
     if check1 > 0 and check2 > 0 and check3 > 0 then
-        local check1, check2, check3 = removePlayerItemCount("ingred_6th_corp"), removePlayerItemCount("ingred_daedras_heart_01"), removePlayerItemCount("ingred_frost_salts_01")
-    
+        local check1, check2, check3 = removePlayerItemCount("ingred_6th_corp"),
+            removePlayerItemCount("ingred_daedras_heart_01"), removePlayerItemCount("ingred_frost_salts_01")
     else
         tes3ui.showNotifyMenu("Required Items are Missing")
-        return
-
+        --return
     end
     --make sure the clone tube is empty, and we have the items needed
     if buttonId == "tdm_controlpanel_left" then
         local newClone = cloneData.addCloneToWorld("gnisis, arvs-drelen", { x = 4637, y = 6015, z = 146 })
+        newClone.newClone.scale = 0.01
+        myClone = newClone.newClone
+        timer.start({
+            duration = 0.01,       -- Duration of the timer in seconds
+            callback = fixScale,   -- Function to be called when the timer expires
+            type = timer.simulate, -- Timer type (timer.simulate or timer.real)
+            iterations = 1         -- Number of times the timer should repeat (optional, default is 1)
+        })
         cloneData.setClonePodName(newClone.createdCloneId, buttonId)
     elseif buttonId == "tdm_controlpanel_right" then
-            local newClone = cloneData.addCloneToWorld("gnisis, arvs-drelen", { x = 4637, y = 5766, z = 146 })
-            cloneData.setClonePodName(newClone.createdCloneId, buttonId)
+        local newClone = cloneData.addCloneToWorld("gnisis, arvs-drelen", { x = 4637, y = 5766, z = 146 })
+        newClone.newClone.scale = 0.01
+        myClone = newClone.newClone
+        timer.start({
+            duration = 0.01,       -- Duration of the timer in seconds
+            callback = fixScale,   -- Function to be called when the timer expires
+            type = timer.simulate, -- Timer type (timer.simulate or timer.real)
+            iterations = 1         -- Number of times the timer should repeat (optional, default is 1)
+        })
+        cloneData.setClonePodName(newClone.createdCloneId, buttonId)
     end
     if (menu) then
         -- Copy text *before* the menu is destroyed

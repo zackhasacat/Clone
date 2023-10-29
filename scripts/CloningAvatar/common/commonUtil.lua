@@ -267,7 +267,24 @@ function commonUtil.setActorHealth(actor, health)
         actor.health.current = health
     end
 end
+function commonUtil.getScale(obj)
+if omw then
 
+return obj.scale
+else
+    return obj.scale
+end
+
+end
+function commonUtil.setScale(obj,scale)
+if omw then
+
+ obj:setScale(scale)
+else
+     obj.scale = scale
+end
+
+end
 function commonUtil.getScriptVariables(objectId, scriptName, val)
     local object = commonUtil.getReferenceById(objectId)
     if omw then
