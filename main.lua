@@ -12,7 +12,11 @@ local function keyDown(e)
     end
 end
 local function activate(e)
-    events.onActivate(e.target, e.activator)
+    local check = events.onActivate(e.target, e.activator)
+    if check == false then
+        
+        return false
+    end
 end
 local function death(e)
     if e.reference.id == tes3.player.id then

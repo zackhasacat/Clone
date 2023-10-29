@@ -564,6 +564,16 @@ function cloneData.getCloneDataForNPC(actor)
     print("Found no clone data for " .. actor.id)
     return nil
 end
+function cloneData.getCloneDataForID(id)
+    for index, value in pairs(cloneData.getCloneData()) do
+        if value.id == id then
+            return value
+        end
+    end
+    print("Found no clone data for " .. id)
+    return nil
+end
+
 
 function cloneData.getRealPlayerCloneID()
     local cdata = cloneData.getCloneData()
@@ -643,8 +653,19 @@ function cloneData.addCloneToWorld(cell, position, rotation, cloneType)
     local data = cloneData.markActorAsClone(newClone, cloneType)
     return { cloneData = data.cloneData, createdCloneId = data.createdCloneId, newClone = newClone }
 end
+function cloneData.clearCloneIDForPod(pod)
+    local cdata = cloneData.getCloneData()
+    for index, value in pairs(cdata) do
+        if cdata[index].occupiedPod == pod then
+           cdata[index].occupiedPod = nil
+        end
+    end
+    cloneData.setCloneData(cdata)
+
+end
 
 function cloneData.setClonePodName(cloneId,pod)
+    cloneData.clearCloneIDForPod(pod)
     local cdata = cloneData.getCloneData()
     for index, value in pairs(cdata) do
         if value.id == cloneId then

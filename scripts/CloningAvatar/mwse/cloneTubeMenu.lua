@@ -22,7 +22,43 @@ function this.init()
     this.id_cancel = tes3ui.registerID("zhac_clone:MenuTextInput_Cancel")
     this.id_createClone = tes3ui.registerID("zhac_clone:MenuTextid_createClone")
 end
+local function getPlayerItemCount(itemId)
+    local count = 0
 
+
+        local player = tes3.player
+        local inventory = player.object.inventory
+
+        for _, stack in pairs(inventory) do
+            if string.find(stack.object.id, itemId) then
+                count = count + stack.count
+            end
+        end
+
+
+    return count
+end
+local function removePlayerItemCount(itemId,fcount)
+    local count = 0
+    if not fcount then
+        fcount = 1
+    end
+
+        local player = tes3.player
+        local inventory = player.object.inventory
+
+        for _, stack in pairs(inventory) do
+            if string.find(stack.object.id, itemId) and stack.count > fcount then
+                tes3.removeItem({reference = player,item = stack.object.id,count = fcount})
+                count = count + stack.count
+                --stack.count = stack.count - fcount
+                return fcount
+            end
+        end
+
+
+    return count
+end
 local clonePaneData
 -- Create window and layout. Called by onCommand.
 function this.createWindow(bid)
@@ -37,7 +73,14 @@ function this.createWindow(bid)
 
     -- Create label for the select menu
     local inputLabel = menu:createLabel { text = "Clone Pod Management" }
-    local infoLabel = menu:createLabel { text = "Current Occupant: None" }
+
+    local occupantName = "None"
+
+    local currentID = cloneData.getCloneIDForPod(buttonId)
+    if currentID then
+        occupantName = cloneData.getCloneDataForID(currentID).name
+    end
+    local infoLabel = menu:createLabel { text = "Current Occupant: " .. occupantName }
     local spacerLabel = menu:createLabel { text = "" }
     inputLabel.borderBottom = 5
 
@@ -66,9 +109,9 @@ function this.createWindow(bid)
     local label2
     local label3
 
-    label3 = rightBlock:createLabel { text = "Available Corupus Meat: 1" }
-    label2 = rightBlock:createLabel { text = "Available Daedra Heart: 1" }
-    label1 = rightBlock:createLabel { text = "Available Frost Salt: 1" }
+    label3 = rightBlock:createLabel { text = "Available Corupus Meat: " ..tostring(getPlayerItemCount("ingred_6th_corp")) }
+    label2 = rightBlock:createLabel { text = "Available Daedra Heart: "..tostring(getPlayerItemCount("ingred_daedras_heart_01")) }
+    label1 = rightBlock:createLabel { text = "Available Frost Salt: "..tostring(getPlayerItemCount("ingred_frost_salts_01")) }
     --scrollPane.width = 300
     -- scrollPane.autoHeight = true
     -- scrollPane.childAlignX = 0.5
@@ -106,10 +149,23 @@ function this.onCloneCreate()
         tes3ui.showNotifyMenu("Clone already occupied")
         return
     end
+
+    local check1, check2, check3 = getPlayerItemCount("ingred_6th_corp"), getPlayerItemCount("ingred_daedras_heart_01"), getPlayerItemCount("ingred_frost_salts_01")
+    if check1 > 0 and check2 > 0 and check3 > 0 then
+        local check1, check2, check3 = removePlayerItemCount("ingred_6th_corp"), removePlayerItemCount("ingred_daedras_heart_01"), removePlayerItemCount("ingred_frost_salts_01")
+    
+    else
+        tes3ui.showNotifyMenu("Required Items are Missing")
+        return
+
+    end
     --make sure the clone tube is empty, and we have the items needed
     if buttonId == "tdm_controlpanel_left" then
         local newClone = cloneData.addCloneToWorld("gnisis, arvs-drelen", { x = 4637, y = 6015, z = 146 })
         cloneData.setClonePodName(newClone.createdCloneId, buttonId)
+    elseif buttonId == "tdm_controlpanel_right" then
+            local newClone = cloneData.addCloneToWorld("gnisis, arvs-drelen", { x = 4637, y = 5766, z = 146 })
+            cloneData.setClonePodName(newClone.createdCloneId, buttonId)
     end
     if (menu) then
         -- Copy text *before* the menu is destroyed

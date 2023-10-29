@@ -221,6 +221,31 @@ function commonUtil.setObjectState(id, state)
     end
 end
 
+function commonUtil.getPlayerItemCount(itemId)
+    local player = commonUtil.getPlayer()
+    local count = 0
+
+    if omw then
+        local playerInv = types.Actor.inventory(player):getAll()
+        for index, value in ipairs(playerInv) do
+            if string.find(value.recordId, itemId) then
+                count = count + value.count
+            end
+        end
+    else -- MWSE logic
+        local player = tes3.player
+        local inventory = player.object.inventory
+
+        for _, stack in pairs(inventory) do
+            if string.find(stack.object.id, itemId) then
+                count = count + stack.count
+            end
+        end
+    end
+
+    return count
+end
+
 function commonUtil.setReferenceState(obj, state)
     if omw and obj.count > 0 then
         obj.enabled = state
@@ -237,7 +262,7 @@ function commonUtil.setActorHealth(actor, health)
     end
 end
 
-function commonUtil.getScriptVariables(objectId, scriptName,val)
+function commonUtil.getScriptVariables(objectId, scriptName, val)
     local object = commonUtil.getReferenceById(objectId)
     if omw then
         return world.mwscript.getLocalScript(object).variables[val]

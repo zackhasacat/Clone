@@ -19,17 +19,18 @@ function events.onActivate(object, actor)
     elseif recId == "tdm_controlpanel_left" then
         --local newClone = cloneData.addCloneToWorld("gnisis, arvs-drelen", { x = 3977, y = 3286, z = 256 })
         commonUtil.openManageCloneMenu(recId)
+    elseif recId == "tdm_controlpanel_right" then
+        --local newClone = cloneData.addCloneToWorld("gnisis, arvs-drelen", { x = 3977, y = 3286, z = 256 })
+        commonUtil.openManageCloneMenu(recId)
     elseif recId == "tdm_switch2" then
         local var = commonUtil.getScriptVariables("tdm_clone_glass2", "TDM_Glass_Script2","RotatingItem")
         local var2 = commonUtil.getScriptVariables("TDM_Switch2", "TDM_Switcher2","turning")
         if var == 0 and var2 == 0 then
            local pCloneData = cloneData.savePlayerData()
-           if not pCloneData then
-            --already exizsted
-           else
-            cloneData.setClonePodName(pCloneData.createdCloneId, "tdm_controlpanel_right") 
+           
+           pCloneData = cloneData.getCloneDataForNPC(commonUtil.getPlayer())
+           cloneData.setClonePodName(pCloneData.id, "tdm_controlpanel_right") 
 
-           end
             commonUtil.openCloneMenu(true)
         else
             commonUtil.showMessage("Door still open, cannot enter ")
@@ -39,18 +40,28 @@ function events.onActivate(object, actor)
         local var2 = commonUtil.getScriptVariables("TDM_Switch1", "TDM_Switcher","turning")
         if var == 0 and var2 == 0 then
             local pCloneData = cloneData.savePlayerData() 
-            if not pCloneData then
-                --already exizsted
-               else
-                cloneData.setClonePodName(pCloneData.createdCloneId, "tdm_controlpanel_left") 
-    
-               end
+            pCloneData = cloneData.getCloneDataForNPC(commonUtil.getPlayer())
+               cloneData.setClonePodName(pCloneData.id, "tdm_controlpanel_left") 
             commonUtil.openCloneMenu(true)
             --tes3.getScript("TDM_Glass_Script1"):getVariableData()
            -- commonUtil.showMessage("Valid State")
         else
             commonUtil.showMessage("Door still open, cannot enter ")
         end
+    elseif recId == "tdm_clone_glass1" then
+        local occupant = cloneData.getCloneIDForPod("tdm_controlpanel_left")
+        local playerCloneID = cloneData.getCloneDataForNPC(commonUtil.getPlayer()).id
+        if occupant and occupant == cloneData.getRealPlayerCloneID() and occupant ~= playerCloneID then
+            return false
+        end
+        cloneData.clearCloneIDForPod("tdm_controlpanel_left")
+    elseif recId == "tdm_clone_glass2" then
+        local occupant = cloneData.getCloneIDForPod("tdm_controlpanel_right")
+        local playerCloneID = cloneData.getCloneDataForNPC(commonUtil.getPlayer()).id
+        if occupant and occupant == cloneData.getRealPlayerCloneID() and occupant ~= playerCloneID  then
+            return false
+        end
+        cloneData.clearCloneIDForPod("tdm_controlpanel_right")
     end
 end
 
