@@ -11,16 +11,46 @@ local commonUtil = require(pathPrefix .. ".common.commonUtil")
 local dataManager = require(pathPrefix .. ".common.dataManager")
 local cloneData = require(pathPrefix .. ".common.cloneData")
 function events.onActivate(object, actor)
-    local recId = commonUtil.getRefRecordId(object)
+    local recId = commonUtil.getRefRecordId(object):lower()
     if recId == "zhac_button_1" then --real body
-        commonUtil.setObjectState("zhac_forcefield2", true)
-        commonUtil.setObjectState("zhac_forcefield1", false)
         --  cloneData.transferPlayerData(commonUtil.getPlayer(), commonUtil.getReferenceById("player"), true)
         cloneData.savePlayerData()
         commonUtil.openCloneMenu(true)
-    elseif recId == "zhac_button_2" then
-        local newClone = cloneData.addCloneToWorld("gnisis, arvs-drelen", { x = 3977, y = 3286, z = 256 })
-        --  cloneData.transferPlayerData(commonUtil.getPlayer(),newClone.newClone,false)
+    elseif recId == "tdm_controlpanel_left" then
+        --local newClone = cloneData.addCloneToWorld("gnisis, arvs-drelen", { x = 3977, y = 3286, z = 256 })
+        commonUtil.openManageCloneMenu(recId)
+    elseif recId == "tdm_switch2" then
+        local var = commonUtil.getScriptVariables("tdm_clone_glass2", "TDM_Glass_Script2","RotatingItem")
+        local var2 = commonUtil.getScriptVariables("TDM_Switch2", "TDM_Switcher2","turning")
+        if var == 0 and var2 == 0 then
+           local pCloneData = cloneData.savePlayerData()
+           if not pCloneData then
+            --already exizsted
+           else
+            cloneData.setClonePodName(pCloneData.createdCloneId, "tdm_controlpanel_right") 
+
+           end
+            commonUtil.openCloneMenu(true)
+        else
+            commonUtil.showMessage("Door still open, cannot enter ")
+        end
+    elseif recId == "tdm_switch1" then
+        local var = commonUtil.getScriptVariables("tdm_clone_glass1", "TDM_Glass_Script1","RotatingItem")
+        local var2 = commonUtil.getScriptVariables("TDM_Switch1", "TDM_Switcher","turning")
+        if var == 0 and var2 == 0 then
+            local pCloneData = cloneData.savePlayerData() 
+            if not pCloneData then
+                --already exizsted
+               else
+                cloneData.setClonePodName(pCloneData.createdCloneId, "tdm_controlpanel_left") 
+    
+               end
+            commonUtil.openCloneMenu(true)
+            --tes3.getScript("TDM_Glass_Script1"):getVariableData()
+           -- commonUtil.showMessage("Valid State")
+        else
+            commonUtil.showMessage("Door still open, cannot enter ")
+        end
     end
 end
 
@@ -55,6 +85,10 @@ function events.onQuestUpdate(id, stage)
         elseif stage == 60 then
             dataManager.setValue("ZHAC_CloneRoomState", 3)
         elseif stage == 70 then
+            local playerCell = commonUtil.getPlayer().cell
+            if playerCell.name:lower() == "gnisis, arvs-drelen" then
+                cloneRoomManager.setObjStates(4, playerCell)
+            end
             dataManager.setValue("ZHAC_CloneRoomState", 4)
         end
     end

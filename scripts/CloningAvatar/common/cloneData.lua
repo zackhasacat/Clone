@@ -62,7 +62,7 @@ function cloneData.savePlayerData()
     local actor1CD = cloneData.getCloneDataForNPC(getPlayer())
     if not actor1CD  then
         print("Saved player data")
-        cloneData.markActorAsClone(getPlayer(), "RealPlayer")
+        return cloneData.markActorAsClone(getPlayer(), "RealPlayer")
     end
 end
 function cloneData.transferPlayerData(actor1, actor2, doTP,kill2)
@@ -642,6 +642,25 @@ function cloneData.addCloneToWorld(cell, position, rotation, cloneType)
     local newClone = commonUtil.createPlayerClone(cell, position, rotation)
     local data = cloneData.markActorAsClone(newClone, cloneType)
     return { cloneData = data.cloneData, createdCloneId = data.createdCloneId, newClone = newClone }
+end
+
+function cloneData.setClonePodName(cloneId,pod)
+    local cdata = cloneData.getCloneData()
+    for index, value in pairs(cdata) do
+        if value.id == cloneId then
+            cdata[index].occupiedPod = pod
+        end
+    end
+    cloneData.setCloneData(cdata)
+end
+function cloneData.getCloneIDForPod(pod)
+    local cdata = cloneData.getCloneData()
+    for index, value in pairs(cdata) do
+        if cdata[index].occupiedPod == pod then
+            return index
+        end
+    end
+
 end
 
 function cloneData.removeCloneFromData(id)

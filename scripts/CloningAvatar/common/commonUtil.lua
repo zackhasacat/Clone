@@ -6,15 +6,16 @@ local _, interfaces = pcall(require, "openmw.interfaces")
 local _, util       = pcall(require, "openmw.util")
 
 local cloneMenu
+local cloneManageMenu
 local pathPrefix    = "VerticalityGangProject.scripts.CloningAvatar"
 
 if omw then
     pathPrefix = "scripts.CloningAvatar"
 end
-local cloneData  = require(pathPrefix .. ".common.cloneData")
-local dataManager = require(pathPrefix.. ".common.dataManager")
+local cloneData   = require(pathPrefix .. ".common.cloneData")
+local dataManager = require(pathPrefix .. ".common.dataManager")
 --cutil = require("VerticalityGangProject.scripts.CloningAvatar.common.commonUtil")
-local commonUtil = {}
+local commonUtil  = {}
 function commonUtil.getPlayer()
     print(omw, world == nil)
     if omw and world then
@@ -39,24 +40,24 @@ function commonUtil.setValueForRef(ref, valueId, value)
         ref.modified = true
         ref.data[valueId] = value
     else
-        return dataManager.setValue(ref.id .. valueId,value)
+        return dataManager.setValue(ref.id .. valueId, value)
     end
 end
-function commonUtil.setPosition(ref,position)
-if not omw then
-ref.position = position
-else
-    ref:teleport(ref.cell,position)
+
+function commonUtil.setPosition(ref, position)
+    if not omw then
+        ref.position = position
+    else
+        ref:teleport(ref.cell, position)
+    end
 end
 
-end
-function commonUtil.getPosition(x,y,z)
-
-if not omw then
-return tes3vector3.new(x,y,z)
-else
-    return util.vector3(x,y,z)
-end
+function commonUtil.getPosition(x, y, z)
+    if not omw then
+        return tes3vector3.new(x, y, z)
+    else
+        return util.vector3(x, y, z)
+    end
 end
 
 function commonUtil.getObjectsInCell(cellOrCellname)
@@ -102,6 +103,7 @@ end
 
 if not omw then
     cloneMenu = include(pathPrefix .. ".mwse.cloneMenu")
+    cloneManageMenu = include(pathPrefix .. ".mwse.cloneTubeMenu")
 end
 function commonUtil.openCloneMenu(force)
     local canOpen = cloneData.playerIsInClone()
@@ -112,6 +114,14 @@ function commonUtil.openCloneMenu(force)
         core.sendGlobalEvent("openClonePlayerMenu")
     else
         cloneMenu.createWindow()
+    end
+end
+
+function commonUtil.openManageCloneMenu(id)
+    if omw then
+        --  core.sendGlobalEvent("openClonePlayerMenu")
+    else
+        cloneManageMenu.createWindow(id)
     end
 end
 
@@ -130,6 +140,11 @@ function commonUtil.getReferenceById(id, locationData)
         end
         if not locationData then
             for index, value in ipairs(world.activeActors) do
+                if value.id == id or value.recordId == id:lower() and value ~= commonUtil.getPlayer() then
+                    return value
+                end
+            end
+            for index, value in ipairs(commonUtil.getPlayer().cell:getAll(types.Activator)) do
                 if value.id == id or value.recordId == id:lower() and value ~= commonUtil.getPlayer() then
                     return value
                 end
@@ -219,6 +234,15 @@ function commonUtil.setActorHealth(actor, health)
         actor:sendEvent("CA_setHealth", health)
     else
         actor.health.current = health
+    end
+end
+
+function commonUtil.getScriptVariables(objectId, scriptName,val)
+    local object = commonUtil.getReferenceById(objectId)
+    if omw then
+        return world.mwscript.getLocalScript(object).variables[val]
+    else
+        return object.context[val]
     end
 end
 
