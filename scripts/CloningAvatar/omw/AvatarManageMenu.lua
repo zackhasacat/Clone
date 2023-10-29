@@ -140,6 +140,13 @@ local function boxedContainer(element)
 end
 local function mouseClick(mouseEvent, data)
     local id = data.props.id
+    if id == "Cancel" then
+        
+        I.UI.setMode(nil)
+        winCreated:destroy()
+        menuOptions = {}
+        return
+    end
     if id == "Create Clone" then
         local check1, check2, check3 = commonUtil.getPlayerItemCount("ingred_6th_corp"),
             commonUtil.getPlayerItemCount("ingred_daedras_heart_01"),
@@ -288,9 +295,9 @@ function selMenu.showMessageBox(ncloneData, textLines, buttons)
     occupantName = cloneDataFunc.getCloneNameForPod(buttonId)
     if not occupantName then
         occupantName = "None"
-        buttons = { "Create Clone" }
+        buttons = { "Create Clone","Cancel" }
     else
-        buttons = { "Open Occupant Inventory" }
+        buttons = { "Open Occupant Inventory","Cancel" }
     end
     if ncloneData then
         addMenuOption(1, "Current Occupant:" .. occupantName, false)
@@ -412,7 +419,7 @@ function selMenu.showMessageBox(ncloneData, textLines, buttons)
                 autoSize = true
             }
         }
-        table.insert(table_contents2, item)
+        table.insert(table_contentsb, item)
     end
 
 
@@ -428,12 +435,12 @@ function selMenu.showMessageBox(ncloneData, textLines, buttons)
             autoSize = true
         },
     }
-    local itemB = { --This includes the top text, and the botton buttons.
+    local itemBB = { --This includes the top text, and the botton buttons.
         type = ui.TYPE.Flex,
         content = ui.content(table_contentsb),
         props = {
             -- size = util.vector2(450, 300),
-            horizontal = false,
+            horizontal = true,
             vertical = true,
             arrange = ui.ALIGNMENT.Center,
             align = ui.ALIGNMENT.Center,
@@ -441,7 +448,7 @@ function selMenu.showMessageBox(ncloneData, textLines, buttons)
         },
     }
     itemK = itemK
-    local itemBB = { --This includes the top text, and the botton buttons.
+    local itemB = { --This includes the top text, and the botton buttons.
         type = ui.TYPE.Flex,
         content = ui.content(table_contents2),
         props = {

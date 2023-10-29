@@ -16,6 +16,14 @@ local dataManager = require(pathPrefix .. ".common.dataManager")
 local cloneData   = {}
 local commonUtil  = {
 }
+local function createRotation(x, y, z)
+    if (core.API_REVISION < 40) then
+      return util.vector3(x, y, z)
+    else
+      local rotate = util.transform.rotateZ(math.rad(z))
+      return rotate
+    end
+  end
 local function getPlayer()
     if omw and world then
         return world.players[1]
@@ -477,12 +485,13 @@ function commonUtil.createPlayerClone(cell, position, rotation)
         if position.x then
             position = util.vector3(position.x, position.y, position.z)
         end
+        rotation = createRotation(0,0,-90)
         newActor = world.createObject(cloneData.getCloneRecord().id)
         newActor:teleport(cell, position, rotation)
         newActor:addScript("scripts/CloningAvatar/omw/cloneScript.lua")
     else
         if not rotation then
-            rotation = tes3vector3.new(0, 0, 0)
+            rotation = tes3vector3.new(0, 0, math.rad(-90))
         end
         position = tes3vector3.new(position.x, position.y, position.z)
         newActor = tes3.createReference({
@@ -552,6 +561,8 @@ function cloneData.getCloneData()
 end
 
 local nextDest
+
+  
 function cloneData.movePlayerToNewBody()
     local player = getPlayer()
     local currentID = cloneData.getCloneDataForNPC(player).id

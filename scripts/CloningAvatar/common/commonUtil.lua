@@ -105,6 +105,12 @@ if not omw then
     cloneMenu = include(pathPrefix .. ".mwse.cloneMenu")
     cloneManageMenu = include(pathPrefix .. ".mwse.cloneTubeMenu")
 end
+function  commonUtil.addTopic(topic)
+    if omw then
+    else
+        tes3.addTopic({topic = topic})
+    end
+end
 function commonUtil.openCloneMenu(force)
     local canOpen = cloneData.playerIsInClone()
     if not canOpen and not force then

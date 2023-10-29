@@ -54,6 +54,9 @@ function events.onActivate(object, actor)
         end
     elseif recId == cloneData.getCloneRecordId() and commonUtil.getQuestStage("TDM_Clone_SQ1") < 30 then
         return false
+    elseif recId == cloneData.getCloneRecordId() then
+        commonUtil.addTopic("follow")
+        commonUtil.addTopic("wait")
     elseif recId == "tdm_switch1" then
         local var = commonUtil.getScriptVariables("tdm_clone_glass1", "TDM_Glass_Script1","RotatingItem")
         local var2 = commonUtil.getScriptVariables("TDM_Switch1", "TDM_Switcher","turning")

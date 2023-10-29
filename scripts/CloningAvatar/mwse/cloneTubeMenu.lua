@@ -186,7 +186,7 @@ function this.onCloneCreate()
             removePlayerItemCount("ingred_daedras_heart_01"), removePlayerItemCount("ingred_frost_salts_01")
     else
         tes3ui.showNotifyMenu("Required Items are Missing")
-        --return
+        return
     end
     --make sure the clone tube is empty, and we have the items needed
     if buttonId == "tdm_controlpanel_left" then

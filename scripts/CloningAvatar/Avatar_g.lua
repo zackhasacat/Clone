@@ -39,6 +39,26 @@ end
 local function playerRespawn()
     cloneData.handleCloneDeath()
 end
+local function removePlayerItemCount(itemId, fcount)
+    local count = 0
+    if not fcount then
+        fcount = 1
+    end
+
+    local player = world.players[1]
+    local inventory = types.Actor.inventory(player):getAll()
+
+    for _, stack in pairs(inventory) do
+        if string.find(stack.recordId, itemId) and stack.count > fcount then
+            stack:remove(fcount)
+            --stack.count = stack.count - fcount
+            return fcount
+        end
+    end
+
+
+    return count
+end
 local activatedActor
 local function activateNPC(object, actor)
     --print(object.recordId)
@@ -84,6 +104,9 @@ local function openCloneManageMenu(id)
 
 end
 local function CC_CreateClone(buttonId)
+    
+    local check1, check2, check3 = removePlayerItemCount("ingred_6th_corp"),
+    removePlayerItemCount("ingred_daedras_heart_01"), removePlayerItemCount("ingred_frost_salts_01")
     if buttonId == "tdm_controlpanel_left" then
         local newClone = cloneData.addCloneToWorld("gnisis, arvs-drelen", { x = 4637, y = 6015, z = 146 })
 
