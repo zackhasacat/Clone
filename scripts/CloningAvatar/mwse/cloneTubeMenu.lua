@@ -146,7 +146,7 @@ end
 function this.onCloneCreate()
     local menu = tes3ui.findMenu(this.id_menu)
     if cloneData.getCloneIDForPod(buttonId) then
-        tes3ui.showNotifyMenu("Clone already occupied")
+        tes3ui.showNotifyMenu("Pod already occupied")
         return
     end
 

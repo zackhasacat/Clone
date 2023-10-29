@@ -35,6 +35,8 @@ function events.onActivate(object, actor)
         else
             commonUtil.showMessage("Door still open, cannot enter ")
         end
+    elseif recId == "zhac_avatarbase" and commonUtil.getQuestStage("TDM_Clone_SQ1") < 30 then
+        return false
     elseif recId == "tdm_switch1" then
         local var = commonUtil.getScriptVariables("tdm_clone_glass1", "TDM_Glass_Script1","RotatingItem")
         local var2 = commonUtil.getScriptVariables("TDM_Switch1", "TDM_Switcher","turning")
@@ -50,15 +52,15 @@ function events.onActivate(object, actor)
         end
     elseif recId == "tdm_clone_glass1" then
         local occupant = cloneData.getCloneIDForPod("tdm_controlpanel_left")
-        local playerCloneID = cloneData.getCloneDataForNPC(commonUtil.getPlayer()).id
-        if occupant and occupant == cloneData.getRealPlayerCloneID() and occupant ~= playerCloneID then
+        local playerCloneID = cloneData.getCloneDataForNPC(commonUtil.getPlayer())
+        if occupant and playerCloneID and occupant == cloneData.getRealPlayerCloneID() and occupant ~= playerCloneID.id then
             return false
         end
         cloneData.clearCloneIDForPod("tdm_controlpanel_left")
     elseif recId == "tdm_clone_glass2" then
         local occupant = cloneData.getCloneIDForPod("tdm_controlpanel_right")
-        local playerCloneID = cloneData.getCloneDataForNPC(commonUtil.getPlayer()).id
-        if occupant and occupant == cloneData.getRealPlayerCloneID() and occupant ~= playerCloneID  then
+        local playerCloneID = cloneData.getCloneDataForNPC(commonUtil.getPlayer())
+        if occupant and playerCloneID and occupant == cloneData.getRealPlayerCloneID() and occupant ~= playerCloneID.id  then
             return false
         end
         cloneData.clearCloneIDForPod("tdm_controlpanel_right")

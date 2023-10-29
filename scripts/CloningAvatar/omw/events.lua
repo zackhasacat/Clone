@@ -3,7 +3,9 @@ local types = require("openmw.types")
 local world = require("openmw.world")
 local I = require("openmw.interfaces")
 I.Activation.addHandlerForType(types.Activator, events.onActivate)
+I.Activation.addHandlerForType(types.NPC, events.onActivate)
 local function onConsoleCommand(command)
+
     events.onConsoleCommand(command)
 end
 local function onKeyPress(keyc)

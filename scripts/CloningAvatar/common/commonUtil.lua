@@ -220,7 +220,13 @@ function commonUtil.setObjectState(id, state)
         tes3.setEnabled({ reference = obj, enabled = state })
     end
 end
-
+function commonUtil.getQuestStage(questId)
+if not omw then
+return tes3.getJournalIndex({id = questId})
+else
+    return types.Player.quests(commonUtil.getPlayer())[questId].stage
+end
+end
 function commonUtil.getPlayerItemCount(itemId)
     local player = commonUtil.getPlayer()
     local count = 0
