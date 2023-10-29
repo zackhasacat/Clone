@@ -112,7 +112,7 @@ function this.createWindow(bid)
     local label2
     local label3
 
-    label3 = rightBlock:createLabel { text = "Available Corupus Meat: " ..
+    label3 = rightBlock:createLabel { text = "Available Corpusmeat: " ..
     tostring(getPlayerItemCount("ingred_6th_corp")) }
     label2 = rightBlock:createLabel { text = "Available Daedra Heart: " ..
     tostring(getPlayerItemCount("ingred_daedras_heart_01")) }

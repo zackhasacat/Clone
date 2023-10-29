@@ -4,6 +4,7 @@ local async = require("openmw.async")
 local core = require("openmw.core")
 local I = require("openmw.interfaces")
 local nearby = require("openmw.nearby")
+local types = require("openmw.types")
 local storage = require("openmw.storage")
 local self = require("openmw.self")
 local cloneData
@@ -12,6 +13,21 @@ local playerSettings = storage.playerSection("MessageBoxData")
 local winCreated
 local selMenu = {}
 local cloneDataFunc = {}
+local commonUtil = {}
+
+
+function commonUtil.getPlayerItemCount(itemId)
+    local count = 0
+
+    local playerInv = types.Actor.inventory(self):getAll()
+    for index, value in ipairs(playerInv) do
+        if string.find(value.recordId, itemId) then
+            count = count + value.count
+        end
+    end
+
+    return count
+end
 
 local podRealId
 function cloneDataFunc.clearCloneIDForPod(pod)
@@ -125,6 +141,16 @@ end
 local function mouseClick(mouseEvent, data)
     local id = data.props.id
     if id == "Create Clone" then
+
+
+    local check1, check2, check3 = commonUtil.getPlayerItemCount("ingred_6th_corp"), commonUtil.getPlayerItemCount("ingred_daedras_heart_01"),
+    commonUtil.getPlayerItemCount("ingred_frost_salts_01")
+    if check1 > 0 and check2 > 0 and check3 > 0 then
+        
+    else
+       ui.showMessage("Required Items are Missing")
+        return
+    end
         core.sendGlobalEvent("CC_CreateClone", buttonId)
         I.UI.setMode(nil)
         winCreated:destroy()
@@ -252,17 +278,13 @@ local function renderListItem(id)
 end
 local staticList = { "Health: 100", "Name: Yes" }
 function selMenu.showMessageBox(ncloneData, textLines, buttons)
+    if not menuOptions then
+        menuOptions = {}
+    end
     if ncloneData then
+
         buttonId = ncloneData.id
         cloneData = ncloneData.data
-        async:newUnsavableGameTimer(0.8, function()
-            if winCreated then
-            I.UI.setMode(nil)
-            winCreated:destroy()
-            menuOptions = {}
-            end
-            return
-        end)
     end
     local occupantName
     occupantName = cloneDataFunc.getCloneNameForPod(buttonId)
@@ -273,12 +295,30 @@ function selMenu.showMessageBox(ncloneData, textLines, buttons)
         buttons = { "Open Occupant Inventory" }
     end
     if ncloneData then
-        menuOptions = {}
         addMenuOption(1, "Current Occupant:" .. occupantName, false)
     end
     if not cloneData or #cloneData == 0 then
-        menuOptions = {}
         addMenuOption(1, "Current Occupant:" .. occupantName, false)
+    end
+    if ncloneData then
+        async:newUnsavableGameTimer(0.8, function()
+            if winCreated then
+                I.UI.setMode(nil)
+                winCreated:destroy()
+                menuOptions = {}
+            end
+            return
+        end)
+
+        local line1 = "Available Corpusmeat: " ..
+            tostring(commonUtil.getPlayerItemCount("ingred_6th_corp"))
+        local line2 = "Available Daedra Heart: " ..
+            tostring(commonUtil.getPlayerItemCount("ingred_daedras_heart_01"))
+        local line3 = "Available Frost Salt: " ..
+            tostring(commonUtil.getPlayerItemCount("ingred_frost_salts_01"))
+            addMenuOption(2,line1, false)
+            addMenuOption(3,line2, false)
+            addMenuOption(4,line3, false)
     end
     if winCreated then
         winCreated:destroy()
