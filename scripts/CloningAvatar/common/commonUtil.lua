@@ -7,7 +7,7 @@ local _, util       = pcall(require, "openmw.util")
 
 local cloneMenu
 local cloneManageMenu
-local pathPrefix    = "VerticalityGangProject.scripts.CloningAvatar"
+local pathPrefix    = "Clone.scripts.CloningAvatar"
 
 if omw then
     pathPrefix = "scripts.CloningAvatar"

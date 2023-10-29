@@ -1,4 +1,4 @@
-local pathPrefix = "VerticalityGangProject.scripts.CloningAvatar"
+local pathPrefix = "Clone.scripts.CloningAvatar"
 local omw, core  = pcall(require, "openmw.core")
 local _, async  = pcall(require, "openmw.async")
 if omw then

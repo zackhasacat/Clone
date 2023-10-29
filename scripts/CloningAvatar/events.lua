@@ -1,6 +1,6 @@
 local events     = {}
 
-local pathPrefix = "VerticalityGangProject.scripts.CloningAvatar"
+local pathPrefix = "Clone.scripts.CloningAvatar"
 
 local omw, core  = pcall(require, "openmw.core")
 if omw then

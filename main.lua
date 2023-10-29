@@ -1,9 +1,9 @@
-local events = require("VerticalityGangProject.scripts.CloningAvatar.events")
-local commonUtil = require("VerticalityGangProject.scripts.CloningAvatar.common.commonUtil")
+local events = require("Clone.scripts.CloningAvatar.events")
+local commonUtil = require("Clone.scripts.CloningAvatar.common.commonUtil")
 local command = include("JosephMcKean.commands.interop")
-local cloneRoomManager = require("VerticalityGangProject.scripts.CloningAvatar.CloneRoomManager")
-local skill = require("VerticalityGangProject.scripts.CloningAvatar.common.skill")
-local dataManager = require("VerticalityGangProject.scripts.CloningAvatar.common.dataManager")
+local cloneRoomManager = require("Clone.scripts.CloningAvatar.CloneRoomManager")
+local skill = require("Clone.scripts.CloningAvatar.common.skill")
+local dataManager = require("Clone.scripts.CloningAvatar.common.dataManager")
 local function keyDown(e)
     for key, value in pairs(tes3.scanCode) do
         if value == e.keyCode then

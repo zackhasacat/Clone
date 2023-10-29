@@ -7,7 +7,7 @@
 local this = {}
 
 
-local pathPrefix = "VerticalityGangProject.scripts.CloningAvatar"
+local pathPrefix = "Clone.scripts.CloningAvatar"
 local rightBlock
 local button_block
 local cloneData  = require(pathPrefix .. ".common.cloneData")
