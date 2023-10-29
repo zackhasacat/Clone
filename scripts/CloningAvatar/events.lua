@@ -86,7 +86,7 @@ end
 function events.onInit()
     local gameStarted = dataManager.getValue("gameStarted", false)
     if not gameStarted then
-        cloneData.addCloneToWorld("gnisis, arvs-drelen", { x = 3977, y = 3286, z = 256 })
+     --   cloneData.addCloneToWorld("gnisis, arvs-drelen", { x = 3977, y = 3286, z = 256 })
         dataManager.setValue("gameStarted", true)
     end
 end
