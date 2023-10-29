@@ -70,7 +70,6 @@ function this.createWindow(bid)
     -- Create window and frame
     local menu = tes3ui.createMenu { id = this.id_menu, fixedFrame = true }
     menu.alpha = 1.0
-    menu.width = 400
     local occupied = false
 
     -- Create label for the select menu
@@ -91,7 +90,8 @@ function this.createWindow(bid)
     local mainBlock = menu:createBlock()
     mainBlock.flowDirection = "left_to_right"
     mainBlock.autoHeight = true
-    mainBlock.autoWidth = true
+    mainBlock.autoWidth = false
+    mainBlock.width = 300
 
     -- local leftBlock = mainBlock:createBlock()
     -- leftBlock.flowDirection = "top_to_bottom"
