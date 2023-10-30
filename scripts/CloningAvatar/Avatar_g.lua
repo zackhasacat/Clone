@@ -8,6 +8,8 @@ local async = require('openmw.async')
 local storage = require("openmw.storage")
 local actorSwap = require('scripts.CloningAvatar.ActorSwap')
 local cloneData = require("scripts.CloningAvatar.common.cloneData")
+local settingsGroup = 'SettingsClone'
+local globalSettings = storage.globalSection(settingsGroup)
 local function doActorSwap(data)
     actorSwap.doActorSwap(data.actor1, data.actor2)
 end
@@ -120,6 +122,11 @@ end
 local function openClonePlayerMenu()
 world.players[1]:sendEvent("openClonePlayerMenu",cloneData.getMenuData())
 end
+local function Clone_SettingUpdate(data)
+
+    globalSettings:set(data.key, data.value)
+
+end
 acti.addHandlerForType(types.NPC, activateNPC)
 return {
     interfaceName  = "CloningAvatars",
@@ -132,6 +139,7 @@ return {
         onActorActive = onActorActive,
     },
     eventHandlers  = {
+        Clone_SettingUpdate = Clone_SettingUpdate,
         doActorSwap = doActorSwap,
         createPlayerAvatar = createPlayerAvatar,
         rezPlayer = rezPlayer,

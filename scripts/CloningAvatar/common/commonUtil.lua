@@ -4,12 +4,16 @@ local _, nearby     = pcall(require, "openmw.nearby")
 local _, types      = pcall(require, "openmw.types")
 local _, interfaces = pcall(require, "openmw.interfaces")
 local _, util       = pcall(require, "openmw.util")
+local _, storage    = pcall(require, "openmw.storage")
 
 local cloneMenu
 local cloneManageMenu
 local pathPrefix    = "Clone.scripts.CloningAvatar"
 
+local globalSettings
 if omw then
+    local settingsGroup = 'SettingsClone'
+    globalSettings = storage.globalSection(settingsGroup)
     pathPrefix = "scripts.CloningAvatar"
 end
 local cloneData   = require(pathPrefix .. ".common.cloneData")
@@ -105,12 +109,13 @@ if not omw then
     cloneMenu = include(pathPrefix .. ".mwse.cloneMenu")
     cloneManageMenu = include(pathPrefix .. ".mwse.cloneTubeMenu")
 end
-function  commonUtil.addTopic(topic)
+function commonUtil.addTopic(topic)
     if omw then
     else
-        tes3.addTopic({topic = topic})
+        tes3.addTopic({ topic = topic })
     end
 end
+
 function commonUtil.openCloneMenu(force)
     local canOpen = cloneData.playerIsInClone()
     if not canOpen and not force then
@@ -125,7 +130,7 @@ end
 
 function commonUtil.openManageCloneMenu(id)
     if omw then
-          core.sendGlobalEvent("openCloneManageMenu",id)
+        core.sendGlobalEvent("openCloneManageMenu", id)
     else
         cloneManageMenu.createWindow(id)
     end
@@ -203,18 +208,29 @@ end
 local function handlePlayerDeath()
 
 end
+local function is_single_letter(s)
+    -- Check if the string has exactly one character and if that character is a letter
+    return #s == 1 and s:match("[a-zA-Z]") ~= nil
+end
 function commonUtil.getKeyBindingChar()
-
-if not omw then
-    local config = mwse.loadConfig("clone")
-local code = config.keybindClone.keyCode
-for key, value in pairs(tes3.scanCode) do
-    if value == code then
-        return key
+    if not omw then
+        local config = mwse.loadConfig("clone")
+        local code = config.keybindClone.keyCode
+        for key, value in pairs(tes3.scanCode) do
+            if value == code then
+                return key
+            end
+        end
+    else
+        local keyChar = globalSettings:get("keyBind")
+        if keyChar ~= nil and is_single_letter(keyChar) then
+            return keyChar
+        else
+            return 'k'
+        end
     end
 end
-end
-end
+
 function commonUtil.getLocationData(obj)
     if omw then
         return {
@@ -238,13 +254,15 @@ function commonUtil.setObjectState(id, state)
         tes3.setEnabled({ reference = obj, enabled = state })
     end
 end
+
 function commonUtil.getQuestStage(questId)
-if not omw then
-return tes3.getJournalIndex({id = questId})
-else
-    return types.Player.quests(commonUtil.getPlayer())[questId].stage
+    if not omw then
+        return tes3.getJournalIndex({ id = questId })
+    else
+        return types.Player.quests(commonUtil.getPlayer())[questId].stage
+    end
 end
-end
+
 function commonUtil.getPlayerItemCount(itemId)
     local player = commonUtil.getPlayer()
     local count = 0
@@ -285,24 +303,23 @@ function commonUtil.setActorHealth(actor, health)
         actor.health.current = health
     end
 end
+
 function commonUtil.getScale(obj)
-if omw then
-
-return obj.scale
-else
-    return obj.scale
+    if omw then
+        return obj.scale
+    else
+        return obj.scale
+    end
 end
 
+function commonUtil.setScale(obj, scale)
+    if omw then
+        obj:setScale(scale)
+    else
+        obj.scale = scale
+    end
 end
-function commonUtil.setScale(obj,scale)
-if omw then
 
- obj:setScale(scale)
-else
-     obj.scale = scale
-end
-
-end
 function commonUtil.getScriptVariables(objectId, scriptName, val)
     local object = commonUtil.getReferenceById(objectId)
     if omw then
