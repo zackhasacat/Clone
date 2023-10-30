@@ -18,12 +18,12 @@ local commonUtil  = {
 }
 local function createRotation(x, y, z)
     if (core.API_REVISION < 40) then
-      return util.vector3(x, y, z)
+        return util.vector3(x, y, z)
     else
-      local rotate = util.transform.rotateZ(math.rad(z))
-      return rotate
+        local rotate = util.transform.rotateZ(math.rad(z))
+        return rotate
     end
-  end
+end
 local function getPlayer()
     if omw and world then
         return world.players[1]
@@ -92,6 +92,7 @@ function cloneData.transferPlayerData(actor1, actor2, doTP, kill2)
     commonUtil.makeActorWait(actor2)
     local actor1id = commonUtil.getActorId(actor1)
     local actor2id = commonUtil.getActorId(actor2)
+
     local actor1CD = cloneData.getCloneDataForNPC(actor1)
     local actor2CD = cloneData.getCloneDataForNPC(actor2)
     if not actor1CD and actor1id == commonUtil.getActorId(getPlayer()) then
@@ -99,6 +100,8 @@ function cloneData.transferPlayerData(actor1, actor2, doTP, kill2)
         cloneData.markActorAsClone(actor1, "RealPlayer")
         actor1CD = cloneData.getCloneDataForNPC(actor1)
     end
+    local actor1IsInPod = actor1CD.occupiedPod == nil
+    local actor2IsInPod = actor2CD.occupiedPod == nil
     if actor1CD and actor2CD then
         cloneData.setCloneDataForNPCID(actor1CD.id, actor2id)
         cloneData.setCloneDataForNPCID(actor2CD.id, actor1id)
@@ -138,10 +141,15 @@ function cloneData.transferPlayerData(actor1, actor2, doTP, kill2)
             local actor1pos = actor1.position
             local actor1cell = actor1.cell
             local actor1rot = actor1.rotation
-
             local actor2pos = actor2.position
             local actor2cell = actor2.cell
             local actor2rot = actor2.rotation
+            if actor2IsInPod then
+                actor1rot = createRotation(0, 0, -90)
+            end
+            if actor1IsInPod then
+                actor2rot = createRotation(0, 0, -90)
+            end
             if actor2cell ~= nil then
                 actor1:teleport(actor2cell, actor2pos, actor2rot)
             end
@@ -152,10 +160,13 @@ function cloneData.transferPlayerData(actor1, actor2, doTP, kill2)
         cloneData.updateClonedataLocation(actor2, actor1)
         return { actor1 = actor1, actor2 = actor2 }
     else --Logic for MWSE
-        local actor1pos     = tes3vector3.new(actor1.position.x, actor1.position.y, actor1.position.z)
-        local actor1cell    = actor1.cell.name
-        local actor1rot     = actor1.orientation:copy()
+        local actor1pos  = tes3vector3.new(actor1.position.x, actor1.position.y, actor1.position.z)
+        local actor1cell = actor1.cell.name
+        local actor1rot  = actor1.orientation:copy()
 
+        if actor1IsInPod then
+            actor1rot = tes3vector3.new(0, 0, math.rad(-90))
+        end
         local actor2DestPos = tes3vector3.new(actor2.position.x, actor2.position.y, actor2.position.z)
         local actor2cell    = actor2.cell.name
         local actor2rot     = actor2.orientation:copy()
@@ -343,23 +354,23 @@ function commonUtil.transferSpells(actor1, actor2)
         end
 
         for index, value in pairs(tes3.getSpells({ target = mob1, getActorSpells = true, getRaceSpells = false, getBirthsignSpells = false, spellType =
-        tes3.spellType["ability"] })) do
+            tes3.spellType["ability"] })) do
             table.insert(actor1Spells, value.id)
             tes3.removeSpell({ reference = mob1, spell = value.id })
         end
         for index, value in pairs(tes3.getSpells({ target = mob2, getActorSpells = true, getRaceSpells = false, getBirthsignSpells = false, spellType =
-        tes3.spellType["ability"] })) do
+            tes3.spellType["ability"] })) do
             table.insert(actor2Spells, value.id)
             tes3.removeSpell({ reference = mob2, spell = value.id })
         end
 
         for index, value in pairs(tes3.getSpells({ target = mob1, getActorSpells = true, getRaceSpells = false, getBirthsignSpells = false, spellType =
-        tes3.spellType["curse"] })) do
+            tes3.spellType["curse"] })) do
             table.insert(actor1Spells, value.id)
             tes3.removeSpell({ reference = mob1, spell = value.id })
         end
         for index, value in pairs(tes3.getSpells({ target = mob2, getActorSpells = true, getRaceSpells = false, getBirthsignSpells = false, spellType =
-        tes3.spellType["curse"] })) do
+            tes3.spellType["curse"] })) do
             table.insert(actor2Spells, value.id)
             tes3.removeSpell({ reference = mob2, spell = value.id })
         end
@@ -485,7 +496,7 @@ function commonUtil.createPlayerClone(cell, position, rotation)
         if position.x then
             position = util.vector3(position.x, position.y, position.z)
         end
-        rotation = createRotation(0,0,-90)
+        rotation = createRotation(0, 0, -90)
         newActor = world.createObject(cloneData.getCloneRecord().id)
         newActor:teleport(cell, position, rotation)
         newActor:addScript("scripts/CloningAvatar/omw/cloneScript.lua")
@@ -562,7 +573,7 @@ end
 
 local nextDest
 
-  
+
 function cloneData.movePlayerToNewBody()
     local player = getPlayer()
     local currentID = cloneData.getCloneDataForNPC(player).id
@@ -723,7 +734,6 @@ function cloneData.setClonePodName(cloneId, pod)
     for index, value in pairs(cdata) do
         if value.id == cloneId then
             cdata[index].occupiedPod = pod
-            
         end
     end
     cloneData.setCloneData(cdata)

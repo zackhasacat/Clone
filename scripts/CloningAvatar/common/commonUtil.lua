@@ -203,6 +203,18 @@ end
 local function handlePlayerDeath()
 
 end
+function commonUtil.getKeyBindingChar()
+
+if not omw then
+    local config = mwse.loadConfig("clone")
+local code = config.keybindClone.keyCode
+for key, value in pairs(tes3.scanCode) do
+    if value == code then
+        return key
+    end
+end
+end
+end
 function commonUtil.getLocationData(obj)
     if omw then
         return {

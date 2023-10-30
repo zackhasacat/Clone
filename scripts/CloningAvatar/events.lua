@@ -128,7 +128,8 @@ function events.onQuestUpdate(id, stage)
 end
 
 function events.onKeyPress(keyChar)
-    if keyChar == 'k' then
+
+    if keyChar == commonUtil.getKeyBindingChar() then
         if commonUtil.menuMode() then
             return
         end
