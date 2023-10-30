@@ -175,7 +175,22 @@ function this.onCloneCreate()
         menu:destroy()
         tes3ui.leaveMenuMode()
         local actor = cloneData.getCloneObject(cloneData.getCloneIDForPod(buttonId))
-        tes3.showContentsMenu({reference = actor})
+        local buttons = {
+            {
+                text = "Cancel",
+                callback = function(e)
+
+                end,
+            },
+            {
+                text = "Open Anyway",
+                callback = function(e)
+
+                    tes3.showContentsMenu({reference = actor})
+                end,
+            },
+        }
+        tes3ui.showMessageMenu({ message = "WARNING: There is a MWSE bug with this companion share menu(only via this menu), that can cause the game to crash if you change equipment on your clone. \nIf you choose to still use this, make sure to save before doing so.", buttons = buttons })
         return
     end
 

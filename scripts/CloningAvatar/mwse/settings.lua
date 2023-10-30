@@ -1,7 +1,6 @@
-local configPath = "clone" -- The name of the config json file of your mod
+local configPath = "clone"
 
 local defaultConfig = {
-    enabled = true,
     keybindClone = {
         keyCode = tes3.scanCode.k,
         isShiftDown = false,
@@ -17,8 +16,8 @@ local function registerModConfig()
     local page = template:createPage()
     local cSettings = page:createCategory("Settings")
     cSettings:createKeyBinder({
-        label = "Assign Keybind",
-        description = "Assign a new keybind to perform awesome tasks.",
+        label = "Clone Switch Keybind",
+        description = "This key will open the menu to switch between clones, when you are in Avatar mode.",
         variable = mwse.mcm.createTableVariable{ id = "keybindClone", table = config },
         allowCombinations = true,
     })
