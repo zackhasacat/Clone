@@ -9,6 +9,7 @@ local deadCamera = false
 local settings = require("scripts.CloningAvatar.omw.settings")
 local AvatarSelect = require("scripts.CloningAvatar.omw.AvatarSelectionMenu")
 local AvatarManage = require("scripts.CloningAvatar.omw.AvatarManageMenu")
+local messageBoxUtil = require("scripts.CloningAvatar.omw.messagebox")
 
 local playerCurrentCloneType = "RealPlayer"
 local function CA_setEquipment(equip)
@@ -103,6 +104,27 @@ local function CA_SetStat(data)
         self.type.stats[data.stat][data.key](self).current = data.current
     end
 end
+local function splitByNewline(inputString)
+    local lines = {}
+    local pattern = "([^\n]*)\n"
+    
+    for line in inputString:gmatch(pattern) do
+        table.insert(lines, line)
+    end
+    
+    -- Check if the inputString ends with a newline character
+    local lastLine = inputString:match("([^\n]*)$")
+    if lastLine ~= "" then
+        table.insert(lines, lastLine)
+    end
+    
+    return lines
+end
+local function showMessageBoxInfo(data)
+local msg = data.msg[1]
+local msgTbl = splitByNewline(msg)
+messageBoxUtil.showMessageBox(nil,msgTbl,data.buttons)
+end
 return {
     interfaceName  = "CloningAvatars",
     interface      = {
@@ -126,5 +148,6 @@ return {
         showMessage = showMessage,
         writeToConsole = writeToConsole,
         CA_SetStat = CA_SetStat,
+        showMessageBoxInfo = showMessageBoxInfo,
     }
 }

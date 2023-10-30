@@ -5,11 +5,12 @@ local _, types      = pcall(require, "openmw.types")
 local _, interfaces = pcall(require, "openmw.interfaces")
 local _, util       = pcall(require, "openmw.util")
 local _, storage    = pcall(require, "openmw.storage")
+local _, async    = pcall(require, "openmw.async")
 
 local cloneMenu
 local cloneManageMenu
 local pathPrefix    = "Clone.scripts.CloningAvatar"
-
+local messageBoxUtil
 local globalSettings
 if omw then
     local settingsGroup = 'SettingsClone'
@@ -28,6 +29,30 @@ function commonUtil.getPlayer()
         return nearby.players[1]
     elseif not omw then
         return tes3.getReference("player")
+    end
+end
+function commonUtil.delayedAction(callback, duration)
+    if not omw then
+        timer.start({ duration = duration, callback = callback })
+    else
+        async:newUnsavableSimulationTimer(duration, callback)
+    end
+end
+
+
+function commonUtil.showInfoBox(msg)
+    if omw then
+        world.players[1]:sendEvent("showMessageBoxInfo",{ msg = { msg }, buttons = { "OK" } })
+    else
+        local buttons = {
+            {
+                text = "OK",
+                callback = function(e)
+
+                end,
+            },
+        }
+        tes3ui.showMessageMenu({ message = msg, buttons = buttons })
     end
 end
 
@@ -113,6 +138,15 @@ function commonUtil.addTopic(topic)
     if omw then
     else
         tes3.addTopic({ topic = topic })
+    end
+end
+
+function commonUtil.addItem(itemId, count)
+    if not omw then
+        tes3.addItem({ reference = tes3.player, item = itemId, count = count })
+    else
+        local newObj = world.createObject(itemId, count)
+        newObj:moveInto(world.players[1])
     end
 end
 

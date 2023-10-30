@@ -6,16 +6,67 @@ local _, types      = pcall(require, "openmw.types")
 local _, util       = pcall(require, "openmw.util")
 local _, interfaces = pcall(require, "openmw.interfaces")
 local _, async      = pcall(require, "openmw.async")
+local _, storage    = pcall(require, "openmw.storage")
 local actorSwap
+local globalSettings
 if omw then
     pathPrefix = "scripts.CloningAvatar"
     actorSwap = require(pathPrefix .. '.ActorSwap')
+    local settingsGroup = 'SettingsClone'
+    globalSettings = storage.globalSection(settingsGroup)
 end
 local config      = require(pathPrefix .. ".config")
 local dataManager = require(pathPrefix .. ".common.dataManager")
 local cloneData   = {}
 local commonUtil  = {
 }
+function commonUtil.showInfoBox(msg)
+    if omw then
+        world.players[1]:sendEvent("showMessageBoxInfo", { msg = { msg }, buttons = { "OK" } })
+    else
+        local buttons = {
+            {
+                text = "OK",
+                callback = function(e)
+
+                end,
+            },
+        }
+        tes3ui.showMessageMenu({ message = msg, buttons = buttons })
+    end
+end
+
+local function is_single_letter(s)
+    -- Check if the string has exactly one character and if that character is a letter
+    return #s == 1 and s:match("[a-zA-Z]") ~= nil
+end
+function commonUtil.getKeyBindingChar()
+    if not omw then
+        local config = mwse.loadConfig("clone")
+        local code = config.keybindClone.keyCode
+        for key, value in pairs(tes3.scanCode) do
+            if value == code then
+                return key
+            end
+        end
+    else
+        local keyChar = globalSettings:get("keyBind")
+        if keyChar ~= nil and is_single_letter(keyChar) then
+            return keyChar
+        else
+            return 'k'
+        end
+    end
+end
+
+function commonUtil.delayedAction(callback, duration)
+    if not omw then
+        timer.start({ duration = duration, callback = callback })
+    else
+        async:newUnsavableSimulationTimer(duration, callback)
+    end
+end
+
 local function createRotation(x, y, z)
     if (core.API_REVISION < 40) then
         return util.vector3(x, y, z)
@@ -85,6 +136,26 @@ function cloneData.savePlayerData()
 end
 
 function cloneData.transferPlayerData(actor1, actor2, doTP, kill2)
+    local check = dataManager.getValueOrInt("firstMessageGiven")
+    if check == 2 then
+        commonUtil.delayedAction(function()
+            commonUtil.showInfoBox(
+                "You are now using your first Clone as an Avatar. \nPress the " ..
+                commonUtil.getKeyBindingChar() .. " key to open the menu again, to return to your original body.")
+        end, 3
+        )
+        dataManager.setValue("firstMessageGiven", 3)
+    end
+    if check == 3 then
+        commonUtil.delayedAction(function()
+            commonUtil.showInfoBox(
+                "You've returned to your own body. \nYou can exit the pod, or activate the switch to return to your created clone. \nYou can't switch between clones when you are in your own body, and outside of a clone pod.")
+        end, 1
+        )
+        dataManager.setValue("firstMessageGiven", 4)
+    end
+
+
     actor1Saved = actor1 --player
     actor2Saved = actor2
     actor1EquipSaved = {}
@@ -492,6 +563,15 @@ end
 
 function commonUtil.createPlayerClone(cell, position, rotation)
     local newActor
+    local check = dataManager.getValueOrInt("firstMessageGiven", 0)
+    if check == 0 then
+        dataManager.setValue("firstMessageGiven", 1)
+        commonUtil.delayedAction(function()
+            commonUtil.showInfoBox(
+                "Now that you've created your first clone, enter the opposite clone pod. \nOpen the door on it.")
+        end, 3
+        )
+    end
     if omw then
         if position.x then
             position = util.vector3(position.x, position.y, position.z)
