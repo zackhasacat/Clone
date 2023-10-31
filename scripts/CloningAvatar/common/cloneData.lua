@@ -406,6 +406,15 @@ function commonUtil.getLocationData(obj)
         }
     end
 end
+local function isBlacklisted(inputString)
+    local blacklist = {"vampire"} -- Add other blacklisted strings here
+    for _, word in ipairs(blacklist) do
+        if string.find(inputString:lower(), "^" .. word) then
+            return true
+        end
+    end
+    return false
+end
 
 function commonUtil.transferSpells(actor1, actor2)
     if omw then
@@ -416,34 +425,47 @@ function commonUtil.transferSpells(actor1, actor2)
         local actor1Spells = {}
         local actor2Spells = {}
         for index, value in pairs(tes3.getSpells({ target = mob1, getActorSpells = false, getRaceSpells = false, getBirthsignSpells = false })) do
+            if not isBlacklisted(value.id) then
+                
             table.insert(actor1Spells, value.id)
             tes3.removeSpell({ reference = mob1, spell = value.id })
+            end
         end
         for index, value in pairs(tes3.getSpells({ target = mob2, getActorSpells = false, getRaceSpells = false, getBirthsignSpells = false })) do
+            if not isBlacklisted(value.id) then
             table.insert(actor2Spells, value.id)
             tes3.removeSpell({ reference = mob2, spell = value.id })
+            end
         end
 
         for index, value in pairs(tes3.getSpells({ target = mob1, getActorSpells = true, getRaceSpells = false, getBirthsignSpells = false, spellType =
             tes3.spellType["ability"] })) do
+                if not isBlacklisted(value.id) then
             table.insert(actor1Spells, value.id)
             tes3.removeSpell({ reference = mob1, spell = value.id })
+                end
         end
         for index, value in pairs(tes3.getSpells({ target = mob2, getActorSpells = true, getRaceSpells = false, getBirthsignSpells = false, spellType =
             tes3.spellType["ability"] })) do
+                if not isBlacklisted(value.id) then
             table.insert(actor2Spells, value.id)
             tes3.removeSpell({ reference = mob2, spell = value.id })
+                end
         end
 
         for index, value in pairs(tes3.getSpells({ target = mob1, getActorSpells = true, getRaceSpells = false, getBirthsignSpells = false, spellType =
             tes3.spellType["curse"] })) do
+                if not isBlacklisted(value.id) then
             table.insert(actor1Spells, value.id)
             tes3.removeSpell({ reference = mob1, spell = value.id })
+                end
         end
         for index, value in pairs(tes3.getSpells({ target = mob2, getActorSpells = true, getRaceSpells = false, getBirthsignSpells = false, spellType =
             tes3.spellType["curse"] })) do
-            table.insert(actor2Spells, value.id)
+                if not isBlacklisted(value.id) then
+           table.insert(actor2Spells, value.id)
             tes3.removeSpell({ reference = mob2, spell = value.id })
+                end
         end
         for index, value in ipairs(actor1Spells) do
             tes3.addSpell({ reference = mob2, spell = value })

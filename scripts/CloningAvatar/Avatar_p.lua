@@ -1,11 +1,6 @@
 local I = require('openmw.interfaces')
 local core = require('openmw.core')
 local types = require('openmw.types')
-local self = require('openmw.self')
-local camera = require('openmw.camera')
-local debug = require('openmw.debug')
-local ui = require('openmw.ui')
-local deadCamera = false
 if not types.Player.isTeleportingEnabled then
     I.Settings.registerPage {
         key = "Clone",
@@ -15,6 +10,11 @@ if not types.Player.isTeleportingEnabled then
     }
     error("Newer version of OpenMW is required")
 end
+local self = require('openmw.self')
+local camera = require('openmw.camera')
+local debug = require('openmw.debug')
+local ui = require('openmw.ui')
+local deadCamera = false
 local settings = require("scripts.CloningAvatar.omw.settings")
 local AvatarSelect = require("scripts.CloningAvatar.omw.AvatarSelectionMenu")
 local AvatarManage = require("scripts.CloningAvatar.omw.AvatarManageMenu")

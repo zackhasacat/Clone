@@ -5,7 +5,7 @@ local _, types      = pcall(require, "openmw.types")
 local _, interfaces = pcall(require, "openmw.interfaces")
 local _, util       = pcall(require, "openmw.util")
 local _, storage    = pcall(require, "openmw.storage")
-local _, async    = pcall(require, "openmw.async")
+local _, async      = pcall(require, "openmw.async")
 
 local cloneMenu
 local cloneManageMenu
@@ -31,6 +31,7 @@ function commonUtil.getPlayer()
         return tes3.getReference("player")
     end
 end
+
 function commonUtil.delayedAction(callback, duration)
     if not omw then
         timer.start({ duration = duration, callback = callback })
@@ -39,10 +40,9 @@ function commonUtil.delayedAction(callback, duration)
     end
 end
 
-
 function commonUtil.showInfoBox(msg)
     if omw then
-        world.players[1]:sendEvent("showMessageBoxInfo",{ msg = { msg }, buttons = { "OK" } })
+        world.players[1]:sendEvent("showMessageBoxInfo", { msg = { msg }, buttons = { "OK" } })
     else
         local buttons = {
             {
@@ -149,21 +149,43 @@ function commonUtil.addItem(itemId, count)
         newObj:moveInto(world.players[1])
     end
 end
+
 function commonUtil.getGMST(gmst)
     if omw then
         return core.getGMST(gmst)
     else
         return tes3.findGMST(gmst).value
-        
     end
 end
-function commonUtil.canTeleport()
 
-if omw then
-return types.Player.isTeleportingEnabled(commonUtil.getPlayer())
-else
-    return not tes3.getWorldController().flagTeleportingDisabled
+function commonUtil.isPlayerVampire()
+    if omw then
+        local effCheck = types.Actor.activeEffects(commonUtil.getPlayer()):getEffect("vampirism")
+        if effCheck ~= nil and effCheck.magnitude > 0 then
+            return true
+        else
+            return false
+        end
+    else
+        return tes3.isAffectedBy({ reference = tes3.player, effect = tes3.effect.vampirism })
+    end
 end
+
+function commonUtil.isPlayerWerewolfForm()
+    if omw then
+        return types.NPC.isWerewolf(commonUtil.getPlayer())
+    else
+        local player = tes3.mobilePlayer
+        return tes3.mobilePlayer.werewolf
+    end
+end
+
+function commonUtil.canTeleport()
+    if omw then
+        return types.Player.isTeleportingEnabled(commonUtil.getPlayer())
+    else
+        return not tes3.getWorldController().flagTeleportingDisabled
+    end
 end
 
 function commonUtil.openCloneMenu(force)
@@ -171,11 +193,19 @@ function commonUtil.openCloneMenu(force)
     if not canOpen and not force then
         return
     end
+    if commonUtil.isPlayerWerewolfForm() then
+        commonUtil.showMessage("You cannot do this as a werewolf.")
+        return
+    end
+    local vampcheck = commonUtil.isPlayerVampire()
+    if force and vampcheck then
+        commonUtil.showInfoBox("Vampires are incapable of using this device.")
+        return
+    end
 
     if not force and not commonUtil.canTeleport() then
         commonUtil.showMessage(commonUtil.getGMST("sTeleportDisabled"))
         return
-        
     end
     if omw then
         core.sendGlobalEvent("openClonePlayerMenu")
