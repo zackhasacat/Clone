@@ -6,11 +6,19 @@ local camera = require('openmw.camera')
 local debug = require('openmw.debug')
 local ui = require('openmw.ui')
 local deadCamera = false
+if not types.Player.isTeleportingEnabled then
+    I.Settings.registerPage {
+        key = "Clone",
+        l10n = "Clone",
+        name = "Clone",
+        description = "Clone is enabled, but your engine version is too old. Please download a new version of OpenMW Develppment or 0.49+.(Newer than October 30, 2023)"
+    }
+    error("Newer version of OpenMW is required")
+end
 local settings = require("scripts.CloningAvatar.omw.settings")
 local AvatarSelect = require("scripts.CloningAvatar.omw.AvatarSelectionMenu")
 local AvatarManage = require("scripts.CloningAvatar.omw.AvatarManageMenu")
 local messageBoxUtil = require("scripts.CloningAvatar.omw.messagebox")
-
 local playerCurrentCloneType = "RealPlayer"
 local function CA_setEquipment(equip)
     types.Actor.setEquipment(self, equip)

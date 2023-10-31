@@ -149,11 +149,33 @@ function commonUtil.addItem(itemId, count)
         newObj:moveInto(world.players[1])
     end
 end
+function commonUtil.getGMST(gmst)
+    if omw then
+        return core.getGMST(gmst)
+    else
+        return tes3.findGMST(gmst).value
+        
+    end
+end
+function commonUtil.canTeleport()
+
+if omw then
+return types.Player.isTeleportingEnabled(commonUtil.getPlayer())
+else
+    return not tes3.getWorldController().flagTeleportingDisabled
+end
+end
 
 function commonUtil.openCloneMenu(force)
     local canOpen = cloneData.playerIsInClone()
     if not canOpen and not force then
         return
+    end
+
+    if not force and not commonUtil.canTeleport() then
+        commonUtil.showMessage(commonUtil.getGMST("sTeleportDisabled"))
+        return
+        
     end
     if omw then
         core.sendGlobalEvent("openClonePlayerMenu")

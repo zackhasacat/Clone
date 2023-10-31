@@ -4,11 +4,14 @@ local async = require('openmw.async')
 local core = require('openmw.core')
 local settingsGroup = 'SettingsClone'
 local playerSettings = storage.playerSection(settingsGroup)
+
+local fconfig = require("scripts.CloningAvatar.config")
+local infoText = fconfig.infoText
 I.Settings.registerPage {
     key = "SettingsClone",
     l10n = "SettingsClone",
     name = "Clone",
-    description = ""
+    description = infoText
 }
 I.Settings.registerGroup {
     key = "SettingsClone",
@@ -23,7 +26,7 @@ I.Settings.registerGroup {
               key = "keyBind",
               renderer = "textLine",
               name = "Keybind to open clone menu",
-              description = "Enter a key to press to open the Clone selection menu. Default is K. If invalid setting provided, default will be used.",
+              description = "Enter a key to press to open the Clone selection menu. If invalid setting provided, default will be used.\n\nDefault: k",
               default = "k"
          },
 

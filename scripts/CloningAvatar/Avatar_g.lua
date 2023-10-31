@@ -13,6 +13,15 @@ local globalSettings = storage.globalSection(settingsGroup)
 local function doActorSwap(data)
     actorSwap.doActorSwap(data.actor1, data.actor2)
 end
+if not types.Player.isTeleportingEnabled then
+    I.Settings.registerPage {
+        key = "Clone",
+        l10n = "Clone",
+        name = "Clone",
+        description = "Clone is enabled, but your engine version is too old. Please download a new version of OpenMW Develppment or 0.49+.(Newer than October 30, 2023)"
+    }
+    error("Newer version of OpenMW is required")
+end
 local function createPlayerAvatar(player)
     local playerRecord = types.NPC.record(player.recordId)
     local rec = {
