@@ -1,0 +1,17 @@
+[package]
+name = "Clone"
+description = "Speak to Chirranirr in Balmora's South Wall Cornerclub as a member of the Thieves Guild to get a job unlike any other!"
+homepage = "https://www.nexusmods.com/morrowind/mods/53671"
+repository = "https://github.com/zackhasacat/VerticalityGangProject"
+authors = ["Team Verticality"]
+version = "1.0.2"
+
+[tools.mwse]
+lua-mod = "Clone"
+load-order = 0
+wait-until-initialize = false
+
+[dependencies.mwse]
+buildnumber = 3455
+[dependencies.mods."Clone"]
+    plugin = "Clone.ESP"

@@ -107,6 +107,20 @@ function commonUtil.makeActorWait(actorRef)
     end
 end
 
+function cloneData.makeAllClonesWait(actorRef)
+    for index, value in pairs(cloneData.getCloneData()) do
+        local ref = cloneData.getCloneObject(value.id)
+        if ref.mobile then
+            commonUtil.makeActorWait(ref.mobile)
+        end
+    end
+    if omw then
+        actorRef:sendEvent("StartAIPackage", { type = "Wander", distance = 0 })
+    else
+        tes3.setAIWander({ reference = actorRef, idles = {} })
+    end
+end
+
 function commonUtil.removeActiveEffects(actorRef)
     if omw then
 
@@ -135,6 +149,17 @@ function cloneData.savePlayerData()
     end
 end
 
+local function fixEncumbrance()
+    local burden = tes3.getEffectMagnitude { reference = tes3.mobilePlayer, effect = tes3.effect.burden }
+    local feather = tes3.getEffectMagnitude { reference = tes3.mobilePlayer, effect = tes3.effect.feather }
+    local weight = tes3.player.object.inventory:calculateWeight() + burden - feather
+    local oldWeight = tes3.mobilePlayer.encumbrance.currentRaw
+
+    if (math.abs(oldWeight - weight) > 0.01) then
+        -- logger:debug(string.format("Recalculating current encumbrance %.2f => %.2f", oldWeight, weight))
+        tes3.setStatistic { reference = tes3.mobilePlayer, name = "encumbrance", current = weight }
+    end
+end
 function cloneData.transferPlayerData(actor1, actor2, doTP, kill2)
     local check = dataManager.getValueOrInt("firstMessageGiven")
     if check == 2 then
@@ -160,7 +185,6 @@ function cloneData.transferPlayerData(actor1, actor2, doTP, kill2)
     actor2Saved = actor2
     actor1EquipSaved = {}
     actor2EquipSaved = {}
-    commonUtil.makeActorWait(actor2)
     local actor1id = commonUtil.getActorId(actor1)
     local actor2id = commonUtil.getActorId(actor2)
 
@@ -226,6 +250,8 @@ function cloneData.transferPlayerData(actor1, actor2, doTP, kill2)
             end
             actor2:teleport(actor1cell, actor1pos, actor1rot)
         end
+        cloneData.makeAllClonesWait()
+--        commonUtil.makeActorWait(actor2)
         actor1:sendEvent("setplayerCurrentCloneType", actor2CD.cloneType)
         cloneData.updateClonedataLocation(actor1, actor2)
         cloneData.updateClonedataLocation(actor2, actor1)
@@ -242,77 +268,86 @@ function cloneData.transferPlayerData(actor1, actor2, doTP, kill2)
         local actor2cell    = actor2.cell.name
         local actor2rot     = actor2.orientation:copy()
         local tp1           = tes3.positionCell({
-            reference = actor2.mobile,
+            reference = actor2,
             position = actor1pos,
             cell = actor1cell,
             orientation = actor1rot,
         })
-        --actor2.position = actor1pos
-        --actor2.orientation = actor1rot
-        print("T1: " .. tostring(tp1))
-        print(actor2.id)
-        local actor1Inv = {}
-        local actor2Inv = {}
-        for index, item in ipairs(actor1.mobile.inventory) do
-            table.insert(actor1Inv, item)
-        end
-        for index, item in ipairs(actor2.mobile.inventory) do
-            table.insert(actor2Inv, item)
-        end
-        for index, item in ipairs(actor1Inv) do
-            local objectId = item.object.id
-            local equipped = actor1.object:hasItemEquipped(objectId)
-            if equipped then
-                actor2EquipSaved[objectId] = true
-                actor1.mobile:unequip({ item = objectId, playSound = false })
-            end
-            tes3.transferItem({
-                from                = actor1.mobile,
-                item                = item.object,
-                to                  = actor2.mobile,
-                count               = item.count,
-                playSound           = false,
-                reevaluateEquipment = false,
-            })
-        end
-        for index, item in ipairs(actor2Inv) do
-            local objectId = item.object.id
-            local equipped = actor2.object:hasItemEquipped(objectId)
-            if equipped then
-                actor1EquipSaved[objectId] = true
-                actor2.mobile:unequip({ item = objectId, playSound = false })
-            end
-            tes3.transferItem({
-                from                = actor2.mobile,
-                item                = item.object,
-                to                  = actor1.mobile,
-                count               = item.count,
-                playSound           = false,
-                reevaluateEquipment = false,
-            })
-        end
         if doTP ~= false then
             tes3.fadeOut({ duration = 0.0001 })
             if not tp1 then
                 error("Actor2 not TP")
             end
             local function onTimerComplete()
+                --actor2.position = actor1pos
+                --actor2.orientation = actor1rot
+                print("T1: " .. tostring(tp1))
+                print(actor2.id)
+                local actor1Inv = {}
+                local actor2Inv = {}
+                for index, item in ipairs(actor1.mobile.inventory) do
+                    table.insert(actor1Inv, {id = item.object.id,count = item.count,ref = item})
+                end
+                for index, item in ipairs(actor2.mobile.inventory) do
+                    table.insert(actor2Inv,  {id = item.object.id,count = item.count,ref = item})
+                end
+                for index, item in ipairs(actor1Inv) do
+                    local objectId = item.id
+                    local equipped = actor1.object:hasItemEquipped(objectId)
+                    if equipped then
+                        actor2EquipSaved[objectId] = { itemData = item.ref.itemData }
+                        actor1.mobile:unequip({ item = objectId, playSound = false })
+                    end
+                    tes3.transferItem({
+                        from                = actor1.mobile,
+                        item                = objectId,
+                        to                  = actor2.mobile,
+                        count               = item.count,
+                        playSound           = false,
+                        reevaluateEquipment = false,
+                    })
+                end
+                for index, item in ipairs(actor2Inv) do
+                    local objectId = item.id
+                    local equipped = actor2.object:hasItemEquipped(objectId)
+                    if equipped then
+                        actor1EquipSaved[objectId] = { itemData = item.ref.itemData }
+                        actor2.mobile:unequip({ item = objectId, playSound = false })
+                    end
+                    tes3.transferItem({
+                        from                = actor2.mobile,
+                        item                =objectId,
+                        to                  = actor1.mobile,
+                        count               = item.count,
+                        playSound           = false,
+                        reevaluateEquipment = false,
+                    })
+                end
+                commonUtil.makeActorWait(actor2)
                 commonUtil.transferSpells(actor1, actor2)
-                commonUtil.transferStats(actor1, actor2)
                 for index, item in ipairs(actor1Saved.mobile.inventory) do
                     local objectId = item.object.id
                     if actor1EquipSaved[objectId] then
-                        actor1Saved.mobile:equip({ item = objectId, playSound = false })
+                        actor1Saved.mobile:equip({
+                            item = objectId,
+                            playSound = false,
+                            itemData = actor1EquipSaved[objectId].itemData
+                        })
                         print("Equipped " .. objectId)
                     end
                 end
                 for index, item in ipairs(actor2Saved.mobile.inventory) do
                     local objectId = item.object.id
                     if actor2EquipSaved[objectId] then
-                        actor2Saved.mobile:equip({ item = objectId, playSound = false })
+                        actor2Saved.mobile:equip({
+                            item = objectId,
+                            playSound = false,
+                            itemData = actor2EquipSaved[objectId].itemData
+                        })
                         print("Equipped " .. objectId)
                     end
                 end
+                commonUtil.transferStats(actor1, actor2)
                 print(actor2DestPos)
                 local tp2 = tes3.positionCell({
                     reference          = actor1,
@@ -327,6 +362,7 @@ function cloneData.transferPlayerData(actor1, actor2, doTP, kill2)
                 if kill2 then
                     actor2.mobile.health.current = 0
                 end
+                fixEncumbrance()
                 tes3.fadeIn({ duration = 0.1 })
             end
 
@@ -406,8 +442,9 @@ function commonUtil.getLocationData(obj)
         }
     end
 end
+
 local function isBlacklisted(inputString)
-    local blacklist = {"vampire"} -- Add other blacklisted strings here
+    local blacklist = { "vampire" } -- Add other blacklisted strings here
     for _, word in ipairs(blacklist) do
         if string.find(inputString:lower(), "^" .. word) then
             return true
@@ -426,46 +463,45 @@ function commonUtil.transferSpells(actor1, actor2)
         local actor2Spells = {}
         for index, value in pairs(tes3.getSpells({ target = mob1, getActorSpells = false, getRaceSpells = false, getBirthsignSpells = false })) do
             if not isBlacklisted(value.id) then
-                
-            table.insert(actor1Spells, value.id)
-            tes3.removeSpell({ reference = mob1, spell = value.id })
+                table.insert(actor1Spells, value.id)
+                tes3.removeSpell({ reference = mob1, spell = value.id })
             end
         end
         for index, value in pairs(tes3.getSpells({ target = mob2, getActorSpells = false, getRaceSpells = false, getBirthsignSpells = false })) do
             if not isBlacklisted(value.id) then
-            table.insert(actor2Spells, value.id)
-            tes3.removeSpell({ reference = mob2, spell = value.id })
+                table.insert(actor2Spells, value.id)
+                tes3.removeSpell({ reference = mob2, spell = value.id })
             end
         end
 
         for index, value in pairs(tes3.getSpells({ target = mob1, getActorSpells = true, getRaceSpells = false, getBirthsignSpells = false, spellType =
             tes3.spellType["ability"] })) do
-                if not isBlacklisted(value.id) then
-            table.insert(actor1Spells, value.id)
-            tes3.removeSpell({ reference = mob1, spell = value.id })
-                end
+            if not isBlacklisted(value.id) then
+                table.insert(actor1Spells, value.id)
+                tes3.removeSpell({ reference = mob1, spell = value.id })
+            end
         end
         for index, value in pairs(tes3.getSpells({ target = mob2, getActorSpells = true, getRaceSpells = false, getBirthsignSpells = false, spellType =
             tes3.spellType["ability"] })) do
-                if not isBlacklisted(value.id) then
-            table.insert(actor2Spells, value.id)
-            tes3.removeSpell({ reference = mob2, spell = value.id })
-                end
+            if not isBlacklisted(value.id) then
+                table.insert(actor2Spells, value.id)
+                tes3.removeSpell({ reference = mob2, spell = value.id })
+            end
         end
 
         for index, value in pairs(tes3.getSpells({ target = mob1, getActorSpells = true, getRaceSpells = false, getBirthsignSpells = false, spellType =
             tes3.spellType["curse"] })) do
-                if not isBlacklisted(value.id) then
-            table.insert(actor1Spells, value.id)
-            tes3.removeSpell({ reference = mob1, spell = value.id })
-                end
+            if not isBlacklisted(value.id) then
+                table.insert(actor1Spells, value.id)
+                tes3.removeSpell({ reference = mob1, spell = value.id })
+            end
         end
         for index, value in pairs(tes3.getSpells({ target = mob2, getActorSpells = true, getRaceSpells = false, getBirthsignSpells = false, spellType =
             tes3.spellType["curse"] })) do
-                if not isBlacklisted(value.id) then
-           table.insert(actor2Spells, value.id)
-            tes3.removeSpell({ reference = mob2, spell = value.id })
-                end
+            if not isBlacklisted(value.id) then
+                table.insert(actor2Spells, value.id)
+                tes3.removeSpell({ reference = mob2, spell = value.id })
+            end
         end
         for index, value in ipairs(actor1Spells) do
             tes3.addSpell({ reference = mob2, spell = value })
@@ -489,8 +525,12 @@ function commonUtil.transferStats(actor1, actor2) --transfer current stat info b
             --mob1[name].base, mob2[name].base = mob2[name].base, mob1[name].base
             mob1[name].current, mob2[name].current = mob2[name].current, mob1[name].current
 
-            tes3.setStatistic({ reference = mob1, name = name, current = mob1[name].current })
-            tes3.setStatistic({ reference = mob2, name = name, current = mob2[name].current })
+            if mob1[name].current ~= mob1[name].base then
+                tes3.setStatistic({ reference = mob1, name = name, current = mob1[name].current })
+            end
+            if mob2[name].current ~= mob2[name].base then
+                tes3.setStatistic({ reference = mob2, name = name, current = mob2[name].current })
+            end
         end
 
         -- attributes
@@ -498,17 +538,21 @@ function commonUtil.transferStats(actor1, actor2) --transfer current stat info b
             --mob1[name].base, mob2[name].base = mob2[name].base, mob1[name].base
             mob1[name].current, mob2[name].current = mob2[name].current, mob1[name].current
 
-            tes3.setStatistic({ reference = mob1, name = name, current = mob1[name].current })
-            tes3.setStatistic({ reference = mob2, name = name, current = mob2[name].current })
+            if mob1[name].current ~= mob1[name].base then
+                tes3.setStatistic({ reference = mob1, name = name, current = mob1[name].current })
+            end
+            if mob2[name].current ~= mob2[name].base then
+                tes3.setStatistic({ reference = mob2, name = name, current = mob2[name].current })
+            end
         end
 
         -- skills
         for name in pairs(tes3.skill) do
             --mob1[name].base, mob2[name].base = mob2[name].base, mob1[name].base
-            mob1[name].current, mob2[name].current = mob2[name].current, mob1[name].current
+            --mob1[name].current, mob2[name].current = mob2[name].current, mob1[name].current
 
-            tes3.setStatistic({ reference = mob1, name = name, current = mob1[name].current })
-            tes3.setStatistic({ reference = mob2, name = name, current = mob2[name].current })
+            -- tes3.setStatistic({ reference = mob1, name = name, current = mob1[name].current })
+            -- tes3.setStatistic({ reference = mob2, name = name, current = mob2[name].current })
         end
 
         mob1:updateDerivedStatistics()
@@ -863,7 +907,7 @@ end
 
 function commonUtil.getCellName(actor)
     if not omw then
-        return actor.mobile.cell.name
+        return actor.cell.name
     else
         if actor.cell.name == "" and actor.cell.isExterior then
             return actor.cell.region
@@ -876,6 +920,9 @@ function commonUtil.getActorHealth(actor)
     if omw then
         return types.Actor.stats.dynamic.health(actor).current
     else
+        if not actor.mobile then
+            return 10
+        end
         return actor.mobile.health.current
     end
 end

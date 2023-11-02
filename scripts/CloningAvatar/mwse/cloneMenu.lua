@@ -1,8 +1,4 @@
---[[
-    Mod: TES3UI TextInput
-    Author: Hrnchamd
-]]
---
+
 
 local this = {}
 
@@ -28,7 +24,7 @@ function this.createWindow()
     end
 
     -- Create window and frame
-    local menu = tes3ui.createMenu { id = this.id_menu, fixedFrame = true }
+    local menu = tes3ui.createMenu( { id = this.id_menu, fixedFrame = true})
     menu.alpha = 1.0
 
     -- Create label for the select menu
@@ -83,7 +79,7 @@ function this.createWindow()
                 end
                 for index, value in ipairs(clonePaneData) do
                     if value.id == id then
-                        rightBlock:findChild("health").text = value.info.health
+                      --  rightBlock:findChild("health").text = value.info.health
                         rightBlock:findChild("location").text = value.info.loc
                     end
                 end
@@ -97,15 +93,13 @@ function this.createWindow()
     local label2
     local label3
     if activeCloneData then
-        label1 = rightBlock:createLabel { text = activeCloneData.info.health, id = "health" }
+       -- label1 = rightBlock:createLabel { text = activeCloneData.info.health, id = "health" }
         label2 = rightBlock:createLabel { text = activeCloneData.info.loc, id = "location" }
-        label3 = rightBlock:createLabel { text = "Information 3" }
     else
-        label1 = rightBlock:createLabel { text = "", id = "health" }
+       -- label1 = rightBlock:createLabel { text = "", id = "health" }
         label2 = rightBlock:createLabel { text = "", id = "location" }
-        label3 = rightBlock:createLabel { text = "Information 3" }
     end
-    label1.minWidth = 350
+    label2.minWidth = 350
     scrollPane.width = 300
     scrollPane.autoHeight = true
     scrollPane.childAlignX = 0.5

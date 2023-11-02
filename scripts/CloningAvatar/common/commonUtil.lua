@@ -301,7 +301,10 @@ end
 function commonUtil.getKeyBindingChar()
     if not omw then
         local config = mwse.loadConfig("clone")
-        local code = config.keybindClone.keyCode
+        local code = tes3.scanCode.k
+        if config and config.keybindClone then
+            code = config.keybindClone.keyCode
+        end
         for key, value in pairs(tes3.scanCode) do
             if value == code then
                 return key
