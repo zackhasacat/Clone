@@ -627,7 +627,7 @@ function commonUtil.copyStats(actorSource, actorTarget) --one way copy of stats 
     end
 end
 
-function commonUtil.createPlayerClone(cell, position, rotation)
+function commonUtil.createPlayerClone(cell, position, rotation,idTouse)
     local newActor
     local check = dataManager.getValueOrInt("firstMessageGiven", 0)
     if check == 0 then
@@ -647,12 +647,16 @@ function commonUtil.createPlayerClone(cell, position, rotation)
         newActor:teleport(cell, position, rotation)
         newActor:addScript("scripts/CloningAvatar/omw/cloneScript.lua")
     else
+        local id = cloneData.getCloneRecord()
+        if idTouse then
+            id = idTouse
+        end
         if not rotation then
             rotation = tes3vector3.new(0, 0, math.rad(-90))
         end
         position = tes3vector3.new(position.x, position.y, position.z)
         newActor = tes3.createReference({
-            object = cloneData.getCloneRecord(),
+            object = id,
             position = position,
             cell = cell,
             orientation = rotation
@@ -859,7 +863,7 @@ function cloneData.markActorAsClone(actor, type)
 end
 
 function cloneData.addCloneToWorld(cell, position, rotation, cloneType,cloneID)
-    local newClone = commonUtil.createPlayerClone(cell, position, rotation)
+    local newClone = commonUtil.createPlayerClone(cell, position, rotation,cloneID)
     local data = cloneData.markActorAsClone(newClone, cloneType)
     return { cloneData = data.cloneData, createdCloneId = data.createdCloneId, newClone = newClone }
 end

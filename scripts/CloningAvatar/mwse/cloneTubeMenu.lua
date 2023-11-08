@@ -15,6 +15,7 @@ local playerCloneData
 local selectedId
 
 local canCloneActors = true
+local npc = require("Clone.clone_npc")
 
 local buttonId
 function this.init()
@@ -94,7 +95,7 @@ function this.createWindow(bid)
     mainBlock.flowDirection = "left_to_right"
     mainBlock.autoHeight = true
     mainBlock.autoWidth = false
-    mainBlock.width = 500
+    mainBlock.width = 400
 
     -- local leftBlock = mainBlock:createBlock()
     -- leftBlock.flowDirection = "top_to_bottom"
@@ -250,7 +251,13 @@ function this.onCloneNPCCreate()
     if cloneData.getCloneIDForPod(buttonId) and menu then
       return
     end
+    local npcid = tes3.player.data.daggerBloodID
+    if not npcid then
+        tes3ui.showNotifyMenu("No blood")
+         return 
+        end
 
+        local id = npc.createNPCClone(tes3.getObject(npcid))
     local check1, check2, check3 = getPlayerItemCount("ingred_6th_corp"), getPlayerItemCount("ingred_daedras_heart_01"),
         getPlayerItemCount("ingred_frost_salts_01")
     if check1 > 0 and check2 > 0 and check3 > 0 then
@@ -260,29 +267,32 @@ function this.onCloneNPCCreate()
         tes3ui.showNotifyMenu("Required Items are Missing")
         return
     end
+    local  rotation = tes3vector3.new(0, 0, math.rad(-90))
     --make sure the clone tube is empty, and we have the items needed
     if buttonId == "tdm_controlpanel_left" then
-        local newClone = cloneData.addCloneToWorld("gnisis, arvs-drelen", { x = 4637, y = 6015, z = 146 })
-        newClone.newClone.scale = 0.01
-        myClone = newClone.newClone
+        local position  = { x = 4637, y = 6015, z = 146 }
+       local pos =  tes3vector3.new(position.x, position.y, position.z)
+        local newClone = tes3.createReference({object = id,position = pos, orientation = rotation,cell = tes3.player.cell})
+        newClone.scale = 0.01
+        myClone = newClone
         timer.start({
             duration = 0.01,       -- Duration of the timer in seconds
             callback = fixScale,   -- Function to be called when the timer expires
             type = timer.simulate, -- Timer type (timer.simulate or timer.real)
             iterations = 1         -- Number of times the timer should repeat (optional, default is 1)
         })
-        cloneData.setClonePodName(newClone.createdCloneId, buttonId)
     elseif buttonId == "tdm_controlpanel_right" then
-        local newClone = cloneData.addCloneToWorld("gnisis, arvs-drelen", { x = 4637, y = 5766, z = 146 })
-        newClone.newClone.scale = 0.01
-        myClone = newClone.newClone
+        local position  = { x = 4637, y = 5766, z = 146 }
+       local pos =  tes3vector3.new(position.x, position.y, position.z)
+        local newClone = tes3.createReference({object = id,position =pos, orientation = rotation,cell = tes3.player.cell})
+        newClone.scale = 0.01
+        myClone = newClone
         timer.start({
             duration = 0.01,       -- Duration of the timer in seconds
             callback = fixScale,   -- Function to be called when the timer expires
             type = timer.simulate, -- Timer type (timer.simulate or timer.real)
             iterations = 1         -- Number of times the timer should repeat (optional, default is 1)
         })
-        cloneData.setClonePodName(newClone.createdCloneId, buttonId)
     end
     if (menu) then
         -- Copy text *before* the menu is destroyed

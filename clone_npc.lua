@@ -18,6 +18,35 @@ dataManager.setValue("npcIDStage",nextVal)
 local NPCID = "zhac_clonenpc_" .. string.format("%04d",nextVal)
 return NPCID
 end
+
+
+
+local function uiObjectTooltipCallback(e)
+    if e.object.id == "zhac_dagger_blood" then
+        local idcheck = dataManager.getValue("daggerBloodID")
+        if idcheck then
+            local obj = tes3.getObject(idcheck)
+            e.tooltip:createLabel { text = "Blood Contained: " ..  obj.name}
+        end
+        
+    end
+end
+event.register(tes3.event.uiObjectTooltip, uiObjectTooltipCallback)
+local function setDaggerName(baseObj)
+    dataManager.setValue("daggerBloodID",baseObj.id)
+end
+local function damageCallback(e)
+    --TODO: make sure clones can't give blood
+    if e.attacker and e.attacker.readiedWeapon then
+        local id = e.attacker.readiedWeapon.object.id
+        if id == "zhac_dagger_blood" then
+            setDaggerName(e.reference.baseObject)
+        end
+    end
+end
+event.register(tes3.event.damage, damageCallback)
+
+
 local function createNPCClone(sourceRecord)
     local newRecord = getNextIDToUse()
     local cloneRecord = tes3.getObject(newRecord)
@@ -31,12 +60,7 @@ local function createNPCClone(sourceRecord)
         local rotation = tes3vector3.new(0, 0, math.rad(-90))
         local position = tes3.player.position
         position = tes3vector3.new(position.x, position.y, position.z)
-        local newActor = tes3.createReference({
-            object = tes3.getObject(newRecord),
-            position = position,
-            cell = tes3.player.cell,
-            orientation = rotation
-        })
+
         return cloneRecord
     
 end
