@@ -5,7 +5,7 @@ local cloneRoomManager = require("Clone.scripts.CloningAvatar.CloneRoomManager")
 --local skill = require("Clone.scripts.CloningAvatar.common.skill")
 local dataManager = require("Clone.scripts.CloningAvatar.common.dataManager")
 local settings = require("Clone.scripts.CloningAvatar.mwse.settings")
-local npc = require("Clone.clone_npc")
+
 local function keyDown(e)
     for key, value in pairs(tes3.scanCode) do
         if value == e.keyCode then

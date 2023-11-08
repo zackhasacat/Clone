@@ -258,6 +258,7 @@ function this.onCloneNPCCreate()
         end
 
         local id = npc.createNPCClone(tes3.getObject(npcid))
+        tes3.player.data.daggerBloodID = nil
     local check1, check2, check3 = getPlayerItemCount("ingred_6th_corp"), getPlayerItemCount("ingred_daedras_heart_01"),
         getPlayerItemCount("ingred_frost_salts_01")
     if check1 > 0 and check2 > 0 and check3 > 0 then
