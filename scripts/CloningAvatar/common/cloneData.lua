@@ -858,7 +858,7 @@ function cloneData.markActorAsClone(actor, type)
     return { cloneData = cdata, createdCloneId = nextCloneId, newClone = actor }
 end
 
-function cloneData.addCloneToWorld(cell, position, rotation, cloneType)
+function cloneData.addCloneToWorld(cell, position, rotation, cloneType,cloneID)
     local newClone = commonUtil.createPlayerClone(cell, position, rotation)
     local data = cloneData.markActorAsClone(newClone, cloneType)
     return { cloneData = data.cloneData, createdCloneId = data.createdCloneId, newClone = newClone }

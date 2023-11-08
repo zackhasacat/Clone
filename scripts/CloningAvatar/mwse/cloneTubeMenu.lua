@@ -14,6 +14,8 @@ local cloneData  = require(pathPrefix .. ".common.cloneData")
 local playerCloneData
 local selectedId
 
+local canCloneActors = true
+
 local buttonId
 function this.init()
     this.id_menu = tes3ui.registerID("zhac_clone:MenuTextInput")
@@ -21,6 +23,7 @@ function this.init()
     this.id_ok = tes3ui.registerID("zhac_clone:MenuTextInput_Ok")
     this.id_cancel = tes3ui.registerID("zhac_clone:MenuTextInput_Cancel")
     this.id_createClone = tes3ui.registerID("zhac_clone:MenuTextid_createClone")
+    this.id_createCloneNPC = tes3ui.registerID("zhac_clone:MenuTextid_createCloneNPC")
 end
 
 local function getPlayerItemCount(itemId)
@@ -91,7 +94,7 @@ function this.createWindow(bid)
     mainBlock.flowDirection = "left_to_right"
     mainBlock.autoHeight = true
     mainBlock.autoWidth = false
-    mainBlock.width = 300
+    mainBlock.width = 500
 
     -- local leftBlock = mainBlock:createBlock()
     -- leftBlock.flowDirection = "top_to_bottom"
@@ -135,17 +138,23 @@ function this.createWindow(bid)
 
     local button_cancel = button_block:createButton { id = this.id_cancel, text = tes3.findGMST("sCancel").value }
     --  local button_ok = button_block:createButton { id = this.id_ok, text = "Control Selected" }
-
+    local button_createCloneNPC
     local createText = "Create Clone"
     if occupied then
         createText = "Open Occupant Inventory"
+        else
+            if canCloneActors then
+                createText = "Create Clone (Self)"
+                 button_createCloneNPC = button_block:createButton { id = this.id_createCloneNPC, text = "Create Clone (Blood)" }
+            end
+
     end
     local button_createClone = button_block:createButton { id = this.id_createClone, text = createText }
-
 
     button_cancel:register(tes3.uiEvent.mouseClick, this.onCancel)
     menu:register(tes3.uiEvent.keyEnter, this.onCloneCreate) -- only works when text input is not captured
     button_createClone:register(tes3.uiEvent.mouseClick, this.onCloneCreate)
+    button_createCloneNPC:register(tes3.uiEvent.mouseClick, this.onCloneNPCCreate)
     -- Register key events
     menu:register("keyEnter", this.onCloneCreate)
     menu:register("keyEsc", this.onCancel)
@@ -192,6 +201,54 @@ function this.onCloneCreate()
         }
         tes3ui.showMessageMenu({ message = "WARNING: There is a MWSE bug with this companion share menu(only via this menu), that can cause the game to crash if you change equipment on your clone. \nIf you choose to still use this, make sure to save before doing so.", buttons = buttons })
         return
+    end
+
+    local check1, check2, check3 = getPlayerItemCount("ingred_6th_corp"), getPlayerItemCount("ingred_daedras_heart_01"),
+        getPlayerItemCount("ingred_frost_salts_01")
+    if check1 > 0 and check2 > 0 and check3 > 0 then
+        local check1, check2, check3 = removePlayerItemCount("ingred_6th_corp"),
+            removePlayerItemCount("ingred_daedras_heart_01"), removePlayerItemCount("ingred_frost_salts_01")
+    else
+        tes3ui.showNotifyMenu("Required Items are Missing")
+        return
+    end
+    --make sure the clone tube is empty, and we have the items needed
+    if buttonId == "tdm_controlpanel_left" then
+        local newClone = cloneData.addCloneToWorld("gnisis, arvs-drelen", { x = 4637, y = 6015, z = 146 })
+        newClone.newClone.scale = 0.01
+        myClone = newClone.newClone
+        timer.start({
+            duration = 0.01,       -- Duration of the timer in seconds
+            callback = fixScale,   -- Function to be called when the timer expires
+            type = timer.simulate, -- Timer type (timer.simulate or timer.real)
+            iterations = 1         -- Number of times the timer should repeat (optional, default is 1)
+        })
+        cloneData.setClonePodName(newClone.createdCloneId, buttonId)
+    elseif buttonId == "tdm_controlpanel_right" then
+        local newClone = cloneData.addCloneToWorld("gnisis, arvs-drelen", { x = 4637, y = 5766, z = 146 })
+        newClone.newClone.scale = 0.01
+        myClone = newClone.newClone
+        timer.start({
+            duration = 0.01,       -- Duration of the timer in seconds
+            callback = fixScale,   -- Function to be called when the timer expires
+            type = timer.simulate, -- Timer type (timer.simulate or timer.real)
+            iterations = 1         -- Number of times the timer should repeat (optional, default is 1)
+        })
+        cloneData.setClonePodName(newClone.createdCloneId, buttonId)
+    end
+    if (menu) then
+        -- Copy text *before* the menu is destroyed
+
+        tes3ui.leaveMenuMode()
+        menu:destroy()
+    end
+end
+
+
+function this.onCloneNPCCreate()
+    local menu = tes3ui.findMenu(this.id_menu)
+    if cloneData.getCloneIDForPod(buttonId) and menu then
+      return
     end
 
     local check1, check2, check3 = getPlayerItemCount("ingred_6th_corp"), getPlayerItemCount("ingred_daedras_heart_01"),
