@@ -7,15 +7,15 @@
 local this = {}
 
 
-local pathPrefix = "Clone.scripts.CloningAvatar"
+local pathPrefix     = "Clone.scripts.CloningAvatar"
 local rightBlock
 local button_block
-local cloneData  = require(pathPrefix .. ".common.cloneData")
+local cloneData      = require(pathPrefix .. ".common.cloneData")
 local playerCloneData
 local selectedId
 
-local canCloneActors = true
-local npc = require("Clone.clone_npc")
+local canCloneActors = false
+local npc            = require("Clone.clone_npc")
 
 local buttonId
 function this.init()
@@ -67,6 +67,7 @@ end
 local clonePaneData
 -- Create window and layout. Called by onCommand.
 function this.createWindow(bid)
+    canCloneActors = tes3.getJournalIndex({ id = "TDM_Clone_SQ3" }) >= 20
     if (tes3ui.findMenu(this.id_menu) ~= nil) then
         return
     end
@@ -117,11 +118,11 @@ function this.createWindow(bid)
     local label3
 
     label3 = rightBlock:createLabel { text = "Available Corpusmeat: " ..
-    tostring(getPlayerItemCount("ingred_6th_corp")) }
+        tostring(getPlayerItemCount("ingred_6th_corp")) }
     label2 = rightBlock:createLabel { text = "Available Daedra Heart: " ..
-    tostring(getPlayerItemCount("ingred_daedras_heart_01")) }
+        tostring(getPlayerItemCount("ingred_daedras_heart_01")) }
     label1 = rightBlock:createLabel { text = "Available Frost Salt: " ..
-    tostring(getPlayerItemCount("ingred_frost_salts_01")) }
+        tostring(getPlayerItemCount("ingred_frost_salts_01")) }
     --scrollPane.width = 300
     -- scrollPane.autoHeight = true
     -- scrollPane.childAlignX = 0.5
@@ -143,19 +144,20 @@ function this.createWindow(bid)
     local createText = "Create Clone"
     if occupied then
         createText = "Open Occupant Inventory"
-        else
-            if canCloneActors then
-                createText = "Create Clone (Self)"
-                 button_createCloneNPC = button_block:createButton { id = this.id_createCloneNPC, text = "Create Clone (Blood)" }
-            end
-
+    else
+        if canCloneActors == true then
+            createText = "Create Clone (Self)"
+            button_createCloneNPC = button_block:createButton { id = this.id_createCloneNPC, text = "Create Clone (Blood)" }
+        end
     end
     local button_createClone = button_block:createButton { id = this.id_createClone, text = createText }
 
+    if canCloneActors == true then
+        button_createCloneNPC:register(tes3.uiEvent.mouseClick, this.onCloneNPCCreate)
+    end
     button_cancel:register(tes3.uiEvent.mouseClick, this.onCancel)
     menu:register(tes3.uiEvent.keyEnter, this.onCloneCreate) -- only works when text input is not captured
     button_createClone:register(tes3.uiEvent.mouseClick, this.onCloneCreate)
-    button_createCloneNPC:register(tes3.uiEvent.mouseClick, this.onCloneNPCCreate)
     -- Register key events
     menu:register("keyEnter", this.onCloneCreate)
     menu:register("keyEsc", this.onCancel)
@@ -170,10 +172,10 @@ local function fixScale()
         myClone.scale = myClone.scale + 0.01
         if myClone.scale < 1 then
             timer.start({
-                duration = 0.01,   -- Duration of the timer in seconds
-                callback = fixScale, -- Function to be called when the timer expires
+                duration = 0.01,       -- Duration of the timer in seconds
+                callback = fixScale,   -- Function to be called when the timer expires
                 type = timer.simulate, -- Timer type (timer.simulate or timer.real)
-                iterations = 1     -- Number of times the timer should repeat (optional, default is 1)
+                iterations = 1         -- Number of times the timer should repeat (optional, default is 1)
             })
         end
     end
@@ -195,12 +197,13 @@ function this.onCloneCreate()
             {
                 text = "Open Anyway",
                 callback = function(e)
-
-                    tes3.showContentsMenu({reference = actor})
+                    tes3.showContentsMenu({ reference = actor })
                 end,
             },
         }
-        tes3ui.showMessageMenu({ message = "WARNING: There is a MWSE bug with this companion share menu(only via this menu), that can cause the game to crash if you change equipment on your clone. \nIf you choose to still use this, make sure to save before doing so.", buttons = buttons })
+        tes3ui.showMessageMenu({ message =
+        "WARNING: There is a MWSE bug with this companion share menu(only via this menu), that can cause the game to crash if you change equipment on your clone. \nIf you choose to still use this, make sure to save before doing so.", buttons =
+        buttons })
         return
     end
 
@@ -245,20 +248,19 @@ function this.onCloneCreate()
     end
 end
 
-
 function this.onCloneNPCCreate()
     local menu = tes3ui.findMenu(this.id_menu)
     if cloneData.getCloneIDForPod(buttonId) and menu then
-      return
+        return
     end
     local npcid = tes3.player.data.daggerBloodID
     if not npcid then
         tes3ui.showNotifyMenu("No blood")
-         return 
-        end
+        return
+    end
 
-        local id = npc.createNPCClone(tes3.getObject(npcid))
-        tes3.player.data.daggerBloodID = nil
+    local id = npc.createNPCClone(tes3.getObject(npcid))
+    tes3.player.data.daggerBloodID = nil
     local check1, check2, check3 = getPlayerItemCount("ingred_6th_corp"), getPlayerItemCount("ingred_daedras_heart_01"),
         getPlayerItemCount("ingred_frost_salts_01")
     if check1 > 0 and check2 > 0 and check3 > 0 then
@@ -268,14 +270,15 @@ function this.onCloneNPCCreate()
         tes3ui.showNotifyMenu("Required Items are Missing")
         return
     end
-    local  rotation = tes3vector3.new(0, 0, math.rad(-90))
+    local rotation = tes3vector3.new(0, 0, math.rad(-90))
     --make sure the clone tube is empty, and we have the items needed
     if buttonId == "tdm_controlpanel_left" then
-        local position  = { x = 4637, y = 6015, z = 146 }
-       local pos =  tes3vector3.new(position.x, position.y, position.z)
-        local newClone = tes3.createReference({object = id,position = pos, orientation = rotation,cell = tes3.player.cell})
+        local position = { x = 4637, y = 6015, z = 146 }
+        local pos      = tes3vector3.new(position.x, position.y, position.z)
+        local newClone = tes3.createReference({ object = id, position = pos, orientation = rotation, cell = tes3.player
+        .cell })
         newClone.scale = 0.01
-        myClone = newClone
+        myClone        = newClone
         timer.start({
             duration = 0.01,       -- Duration of the timer in seconds
             callback = fixScale,   -- Function to be called when the timer expires
@@ -283,11 +286,12 @@ function this.onCloneNPCCreate()
             iterations = 1         -- Number of times the timer should repeat (optional, default is 1)
         })
     elseif buttonId == "tdm_controlpanel_right" then
-        local position  = { x = 4637, y = 5766, z = 146 }
-       local pos =  tes3vector3.new(position.x, position.y, position.z)
-        local newClone = tes3.createReference({object = id,position =pos, orientation = rotation,cell = tes3.player.cell})
+        local position = { x = 4637, y = 5766, z = 146 }
+        local pos      = tes3vector3.new(position.x, position.y, position.z)
+        local newClone = tes3.createReference({ object = id, position = pos, orientation = rotation, cell = tes3.player
+        .cell })
         newClone.scale = 0.01
-        myClone = newClone
+        myClone        = newClone
         timer.start({
             duration = 0.01,       -- Duration of the timer in seconds
             callback = fixScale,   -- Function to be called when the timer expires

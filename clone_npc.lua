@@ -39,6 +39,12 @@ local function damageCallback(e)
     --TODO: make sure clones can't give blood
     if e.attacker and e.attacker.readiedWeapon then
         local id = e.attacker.readiedWeapon.object.id
+        if string.sub(e.reference.baseObject.id,1,4):lower() == "zhac" then
+            tes3ui.showNotifyMenu("You can't get blood from a clone")
+            return
+        else
+            print(string.sub(e.reference.baseObject.id,1,4):lower())
+        end
         if id == "zhac_dagger_blood" then
             setDaggerName(e.reference.baseObject)
         end

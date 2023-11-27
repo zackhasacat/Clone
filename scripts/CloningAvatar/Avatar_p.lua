@@ -39,7 +39,6 @@ local function onUpdate(dt)
         --  camera.setMode(camera.MODE.Static)
         setCollisionState(false)
         rezPlayer()
-        deadCamera = true
     end
     if self.cell.name ~= lastCell then
         
