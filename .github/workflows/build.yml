@@ -24,7 +24,7 @@ jobs:
         mkdir -p release/mwse/mods/clone
         cp -r meshes release/
         cp *.toml release/
-        cp *.esp release/
+        cp *.ESP release/
         cp *.omwscripts release/
         cp -r scripts release/
         mv *.lua release/mwse/mods/clone/
