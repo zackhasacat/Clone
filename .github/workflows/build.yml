@@ -27,6 +27,7 @@ jobs:
         cp *.ESP release/
         cp *.omwscripts release/
         cp -r scripts release/
+        cp -r scripts release/mwse/mods/clone/
         mv *.lua release/mwse/mods/clone/
 
     - name: Zip Release
