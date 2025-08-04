@@ -33,6 +33,8 @@ local function setCollisionState(state)
 end
 local  lastCell
 local function onUpdate(dt)
+
+if core.isWorldPaused() then return end
     if self.type.stats.dynamic.health(self).current <= 1 then
         self.type.stats.dynamic.health(self).current = 100
         --types.Actor.resurrect(self)

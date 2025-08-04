@@ -3,6 +3,8 @@ local core = require("openmw.core")
 local types = require("openmw.types")
 local lastCell
 local function onUpdate(dt)
+
+if core.isWorldPaused() then return end
     if self.cell ~= lastCell then
         lastCell = self.cell
         core.sendGlobalEvent("updateClonedataLocation", self)
